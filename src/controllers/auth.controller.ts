@@ -81,7 +81,6 @@ authRouter.get('/registration-confirmation',
         return res.sendStatus(204);
     });
 
-
 authRouter.post('/registration-email-resending',
     validateRegistrationEmailResendingModel(),
     validateResult,
