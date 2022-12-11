@@ -4,6 +4,19 @@ import {APIErrorResultModel} from "../controllers/dto/apiErrorResult.dto";
 import {queryRepository} from "../repositories/query.repository";
 
 export const validatorMiddleware = {
+    validateRegistrationConfirmationCodeModel: () => [
+        body('code')
+            .exists()
+            .withMessage('code is required')
+    ],
+    validateRegistrationEmailResendingModel: () => [
+        body('email')
+            .trim()
+            .exists()
+            .withMessage('email is required')
+            .matches(/^[\w-.]+@([\w-]+.)+[\w-]{2,4}$/)
+            .withMessage('email is wrong')
+    ],
     validateCommentInputModel: () => [
         body('content')
             .exists()
