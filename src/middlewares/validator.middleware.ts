@@ -1,11 +1,11 @@
 import {Request, Response, NextFunction} from "express";
-import {body, validationResult} from 'express-validator';
+import {body, query, validationResult} from 'express-validator';
 import {APIErrorResultModel} from "../controllers/dto/apiErrorResult.dto";
 import {queryRepository} from "../repositories/query.repository";
 
 export const validatorMiddleware = {
     validateRegistrationConfirmationCodeModel: () => [
-        body('code')
+        query('code')
             .exists()
             .withMessage('code is required')
     ],
