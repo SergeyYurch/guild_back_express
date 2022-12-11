@@ -1,5 +1,5 @@
 import {PostEntity} from "../services/entities/post.entity";
-import {postsCollection} from "./db";
+import {postsCollection} from "../adapters/dbAdapters";
 import {ObjectId, WithId} from "mongodb";
 import {PostEditEntity} from "../services/entities/postEdit.entity";
 import {PostsRepositoryInterface} from "./interfaces/posts.repository.interface";

@@ -1,5 +1,5 @@
-import {blogsCollection, commentsCollection, postsCollection, usersCollection} from "./db";
-import {ObjectId, WithId} from "mongodb";
+import {blogsCollection, commentsCollection, postsCollection, usersCollection} from "../adapters/dbAdapters";
+import {ObjectId} from "mongodb";
 import {
     PaginatorOptionInterface,
     QueryRepositoryInterface
@@ -221,9 +221,9 @@ export const queryRepository: QueryRepositoryInterface = {
             .toArray();
         const items: UserViewModelDto[] = result.map(e => ({
             id: e._id.toString(),
-            login: e.login,
-            email: e.email,
-            createdAt: e.createdAt
+            login: e.accountData.login,
+            email: e.accountData.email,
+            createdAt: e.accountData.createdAt.toISOString()
         }));
         return {
             pagesCount: pagesCount(totalCount, pageSize),
