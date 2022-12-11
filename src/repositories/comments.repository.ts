@@ -1,4 +1,4 @@
-import {commentsCollection} from "./db";
+import {commentsCollection} from "../adapters/dbAdapters";
 import {ObjectId} from "mongodb";
 import {CommentEntity} from "../services/entities/comment.entity";
 import {CommentInputModelDto} from "../controllers/dto/commentInputModel.dto";
