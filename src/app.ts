@@ -5,8 +5,11 @@ import {postsRouter} from "./controllers/posts.controller";
 import {authRouter} from "./controllers/auth.controller";
 import {usersRouter} from "./controllers/users.controller";
 import {commentsRouter} from "./controllers/comments.controller";
+import cors from 'cors'
 
 export const app = express();
+app.use(cors())
+
 app.use(express.json())
 app.use('/blogs', blogsRouter)
 app.use('/posts', postsRouter)
