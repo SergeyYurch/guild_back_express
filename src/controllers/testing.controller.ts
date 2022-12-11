@@ -1,5 +1,5 @@
 import {Router, Request, Response, NextFunction} from "express";
-import {repository} from "../repositories/repository";
+import {testsRepository} from "../repositories/tests.repository";
 export const testingRouter = Router();
 
 testingRouter.use((req: Request, res: Response, next: NextFunction) => {
@@ -7,7 +7,7 @@ testingRouter.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 testingRouter.delete('/all-data', async (req: Request, res: Response)=> {
-        const result = await repository.dataBaseClear();
+        const result = await testsRepository.dataBaseClear();
         if (result) {
             res.sendStatus(204);
         } else {
