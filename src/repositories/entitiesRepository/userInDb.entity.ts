@@ -1,4 +1,5 @@
-export interface UserEntity {
+export interface UserInDbEntity {
+    id:string
     accountData: {
         login: string
         email: string
