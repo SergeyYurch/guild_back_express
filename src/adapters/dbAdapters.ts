@@ -11,11 +11,11 @@ if (!mongoUri){
     throw new Error('!!!Mongo URI does not found')
 }
 const client = new MongoClient(mongoUri)
-const db = client.db();
-export const blogsCollection = db.collection<BlogEntity>('blogs')
-export const postsCollection = db.collection<PostEntity>('posts')
-export const usersCollection = db.collection<UserEntity>('users')
-export const commentsCollection = db.collection<CommentEntity>('users')
+const dbAdapters = client.db();
+export const blogsCollection = dbAdapters.collection<BlogEntity>('blogs')
+export const postsCollection = dbAdapters.collection<PostEntity>('posts')
+export const usersCollection = dbAdapters.collection<UserEntity>('users')
+export const commentsCollection = dbAdapters.collection<CommentEntity>('users')
 
 export async function runDB() {
     try{
