@@ -5,7 +5,7 @@ import {blogsRouter} from "./controllers/blogs.controller";
 import {postsRouter} from "./controllers/posts.controller";
 // import {authGuardMiddleware} from "./middlewares/authGuard.middleware";
 import {Server} from "http";
-import {runDB} from "./repositories/db";
+import {runDB} from "./adapters/dbAdapters";
 
 dotenv.config();
 
