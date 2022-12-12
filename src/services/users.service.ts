@@ -11,6 +11,14 @@ import {emailManager} from "../managers/emailManager";
 import add from 'date-fns/add';
 import {SentMessageInfo} from "nodemailer";
 
+const getExpirationDate = () => add(new Date(),
+    {
+        hours: 0,
+        minutes: 10
+    });
+
+const getConfirmationCode = () => uuidv4();
+
 const {
     findUserByEmailOrPassword,
     findUserByConfirmationCode,
@@ -18,7 +26,7 @@ const {
     deleteUserById,
     getUserById,
     confirmEmail,
-    updateSendingConfirmEmail
+    updateSendingConfirmEmail,
 } = usersRepository;
 const parseUserViewModel = (user: UserInDbEntity): UserViewModelDto => {
     return {
@@ -61,30 +69,25 @@ export const usersService: UsersServiceInterface = {
         const passwordSalt = await bcrypt.genSalt(10);
         const passwordHash = await generateHash(password, passwordSalt);
         const newUser: UserEntity = {
-            accountData: {
-                login,
-                email,
-                passwordHash,
-                passwordSalt,
-                createdAt
-            },
-            emailConfirmation: {
-                confirmationCode: uuidv4(),
-                expirationDate: add(new Date(),
-                    {
-                        hours: 0,
-                        minutes: 10
-                    }),
-                isConfirmed: false,
-                nextSendingConfirmEmail: new Date()
-            }
-        };
-        const result = await createNewUser(newUser);
-        if (!result) return null;
-        const user = await getUserById(result);
+                accountData: {
+                    login,
+                    email,
+                    passwordHash,
+                    passwordSalt,
+                    createdAt
+                },
+                emailConfirmation: {
+                    confirmationCode: getConfirmationCode(),
+                    expirationDate: getExpirationDate(),
+                    isConfirmed: false,
+                    dateSendingConfirmEmail: [new Date()]
+                }
+            };
+        const newUserId = await createNewUser(newUser);
+        if (!newUserId) return null;
+        const user = await getUserById(newUserId);
         if (!user) return null;
         await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
-        await updateSendingConfirmEmail(user.id);
         return parseUserViewModel(user);
     },
     async checkCredentials(credentials: LoginInputModel): Promise<UserViewModelDto | null> {
@@ -109,11 +112,17 @@ export const usersService: UsersServiceInterface = {
         const user = await getUserById(id);
         if (!user) return false;
         if (user.emailConfirmation.isConfirmed) return false;
-
-        //if(user.emailConfirmation.nextSendingConfirmEmail > new Date()) return false
-        const resend: SentMessageInfo = await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
-        await updateSendingConfirmEmail(id);
-        if (resend.accepted.length > 0) return true;
-        return false;
+        const newConfirmationCode =  getConfirmationCode();
+        const newExpirationDate = getExpirationDate()
+        await updateSendingConfirmEmail(user.id,newConfirmationCode, newExpirationDate);
+        const sendingDates =user.emailConfirmation.dateSendingConfirmEmail;
+        //Если было более 5 отправок письма и последняя менее 5 минут назад отбиваем
+        if(sendingDates.length > 5
+            && sendingDates.slice(-1)[0] < add(new Date(), {minutes:5})) return false
+        const resend: SentMessageInfo = await emailManager.sendEmailConfirmation(user.accountData.email, newConfirmationCode);
+        // проверяем ответ после отправки письма и обновляем данные в базе по повторной отправке
+        // письма
+        if (resend.accepted.length > 0) await updateSendingConfirmEmail(id, newConfirmationCode, newExpirationDate);
+        return true;
     }
 };
