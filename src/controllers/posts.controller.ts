@@ -111,8 +111,6 @@ postsRouter.post(
 postsRouter.get('/:postId/comments',
     async (req: RequestWithIdAndBody<CommentInputModelDto>, res: Response) => {
         const postId = req.params.postId;
-        console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!');
-        console.log(await getPostById(postId));
         if (!ObjectId.isValid(postId) || !(await getPostById(postId))) return res.sendStatus(404);
         const paginatorOption: PaginatorOptionInterface = parseQueryPaginator(req);
         const result = await findAllCommentsByPostId(postId, paginatorOption);
