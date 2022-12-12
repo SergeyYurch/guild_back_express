@@ -17,7 +17,13 @@ const {
     validateRegistrationConfirmationCodeModel,
     validateResult
 } = validatorMiddleware;
-const {checkCredentials, findUserByEmailOrPassword, registerNewUser, confirmEmail, resendingEmail} = usersService;
+const {
+    checkCredentials,
+    findUserByEmailOrPassword,
+    registerNewUser,
+    confirmEmail,
+    resendingEmail
+} = usersService;
 
 authRouter.post('/login',
     validateAuthInputModel(),
@@ -55,13 +61,8 @@ authRouter.post('/registration',
     async (req: RequestWithBody<UserInputModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration run`);
         const {login, password, email} = req.body;
-        const loginIsExist = await findUserByEmailOrPassword(login);
-        const emailIsExist = await findUserByEmailOrPassword(email);
-        if (loginIsExist || emailIsExist) return res.sendStatus(400);
         try {
             const newUser = await registerNewUser(login, email, password);
-            console.log('newUser');
-            console.log(newUser);
             if (newUser) return res.sendStatus(204);
         } catch (error) {
             return res.sendStatus(500);
@@ -69,17 +70,18 @@ authRouter.post('/registration',
 
     });
 
-authRouter.get('/registration-confirmation',
+authRouter.post('/registration-confirmation',
     validateRegistrationConfirmationCodeModel(),
     validateResult,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/registration-confirmation run`);
-        console.log(req.query);
-        const code = String(req.query.code);
+        console.log(req.body);
+        const code = String(req.body.code);
         const result = await confirmEmail(code);
         if (!result) res.sendStatus(400);
         return res.sendStatus(204);
     });
+
 
 authRouter.post('/registration-email-resending',
     validateRegistrationEmailResendingModel(),
@@ -90,7 +92,7 @@ authRouter.post('/registration-email-resending',
         const user = await findUserByEmailOrPassword(email);
         console.log(`[authController]:POST/registration-email-resending user: ${user?.email}`);
         if (!user) return res.sendStatus(400);
-        const result = await resendingEmail(user.id)
+        const result = await resendingEmail(user.id);
         if (!result) return res.sendStatus(400);
-        return res.sendStatus(204)
+        return res.sendStatus(204);
     });
