@@ -62,6 +62,33 @@ export const usersService: UsersServiceInterface = {
         if (user.emailConfirmation.expirationDate < new Date()) return false;
         return true;
     },
+    async createNewUser(login: string, email: string, password: string): Promise<UserViewModelDto | null> {
+        console.log(`[usersService]: createNewUser ${login}`);
+        const createdAt = new Date();
+        const passwordSalt = await bcrypt.genSalt(10);
+        const passwordHash = await generateHash(password, passwordSalt);
+        const newUser: UserEntity = {
+            accountData: {
+                login,
+                email,
+                passwordHash,
+                passwordSalt,
+                createdAt
+            },
+            emailConfirmation: {
+                confirmationCode: getConfirmationCode(),
+                expirationDate: getExpirationDate(),
+                isConfirmed: true,
+                dateSendingConfirmEmail: [new Date()]
+            }
+        };
+        const newUserId = await createNewUser(newUser);
+        if (!newUserId) return null;
+        const user = await getUserById(newUserId);
+        if (!user) return null;
+        await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
+        return parseUserViewModel(user);
+    },
 
     async registerNewUser(login: string, email: string, password: string): Promise<UserViewModelDto | null> {
         console.log(`[usersService]: registerNewUser ${login}`);
