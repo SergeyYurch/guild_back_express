@@ -10,6 +10,6 @@ export interface UserEntity {
         confirmationCode: string
         expirationDate: Date
         isConfirmed: boolean
-        nextSendingConfirmEmail: Date
+        dateSendingConfirmEmail: Date[]
     }
 }

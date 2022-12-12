@@ -11,6 +11,6 @@ export interface UserInDbEntity {
         confirmationCode: string
         expirationDate: Date
         isConfirmed: boolean
-        nextSendingConfirmEmail: Date
+        dateSendingConfirmEmail: Date[]
     }
 }
