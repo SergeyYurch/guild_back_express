@@ -28,7 +28,7 @@ export const validatorMiddleware = {
                     const user = await usersService.findUserByEmailOrPassword(login);
                     if (user) throw new Error();
                 })
-            .withMessage('login is already registered')
+            .withMessage('email is already registered')
     ],
     validateCommentInputModel: () => [
         body('content')
@@ -37,7 +37,7 @@ export const validatorMiddleware = {
             .isLength({min: 20, max: 300})
             .withMessage('content length is wrong')
     ],
-    validateAuthInputModel: () => [
+    validateLoginInputModel: () => [
         body('loginOrEmail')
             .trim()
             .isLength({min: 1})
@@ -59,30 +59,28 @@ export const validatorMiddleware = {
             .withMessage('login is wrong')
             .exists()
             .withMessage('login is required')
-            .custom(
-        async (login) => {
-            const user = await usersService.findUserByEmailOrPassword(login);
-            if (user) throw new Error();
-        })
-        .withMessage('login is already registered'),
+            .custom(async (login) => {
+                const user = await usersService.findUserByEmailOrPassword(login);
+                if (user) throw new Error();
+            })
+            .withMessage('login is already registered'),
 
         body('password')
             .isLength({min: 6, max: 20})
             .withMessage('length of password must be  6-20 chars')
             .exists()
-            .withMessage('password is required')
-            .custom(
-                async (login) => {
-                    const user = await usersService.findUserByEmailOrPassword(login);
-                    if (user) throw new Error();
-                })
-            .withMessage('login is already registered'),
+            .withMessage('password is required'),
         body('email')
             .trim()
             .exists()
             .withMessage('email is required')
             .matches(/^[\w-.]+@([\w-]+.)+[\w-]{2,4}$/)
             .withMessage('email is wrong')
+            .custom(async (email) => {
+                const user = await usersService.findUserByEmailOrPassword(email);
+                if (user) throw new Error();
+            })
+            .withMessage('email is already registered'),
     ],
     validateBlogInputModel: () => [
         body('name')
