@@ -8,5 +8,6 @@ export interface UsersRepositoryInterface {
     getUserById: (id: string) => Promise<UserInDbEntity | null>;
     findUserByConfirmationCode: (value: string) => Promise<UserInDbEntity | null>;
     confirmEmail: (id: string) => Promise<boolean>;
-    updateSendingConfirmEmail: (id: string) => Promise<boolean>;
+    updateSendingConfirmEmail: (id: string, confirmationCode: string, expirationDate: Date) => Promise<boolean>;
+    setNewConfirmationCode: (id: string, code: string, date: Date) => Promise<boolean>;
 }

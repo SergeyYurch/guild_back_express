@@ -3,7 +3,6 @@ import {ObjectId, WithId} from "mongodb";
 import {UserEntity} from "../services/entities/user.entity";
 import {UsersRepositoryInterface} from "./interfaces/users.repository.interface";
 import {UserInDbEntity} from "./entitiesRepository/userInDb.entity";
-import add from "date-fns/add";
 
 const parseUserInDbEntity = (result: WithId<UserEntity>): UserInDbEntity => {
     console.log(' parseUserInDbEntity');
@@ -20,7 +19,7 @@ const parseUserInDbEntity = (result: WithId<UserEntity>): UserInDbEntity => {
             confirmationCode: result.emailConfirmation.confirmationCode,
             expirationDate: result.emailConfirmation.expirationDate,
             isConfirmed: result.emailConfirmation.isConfirmed,
-            nextSendingConfirmEmail: result.emailConfirmation.nextSendingConfirmEmail
+            dateSendingConfirmEmail: result.emailConfirmation.dateSendingConfirmEmail
         }
     });
 };
@@ -57,19 +56,35 @@ export const usersRepository: UsersRepositoryInterface = {
     async confirmEmail(id: string): Promise<boolean> {
         const result = await usersCollection.updateOne(
             {_id: new ObjectId(id)},
-            {$set: {'emailConfirmation.isConfirmed': true}});
+            {
+                $set: {
+                    'emailConfirmation.isConfirmed': true,
+                    'dateSendingConfirmEmail': []
+                }
+            });
         return result.acknowledged;
     },
-    async updateSendingConfirmEmail(id: string): Promise<boolean> {
+    async updateSendingConfirmEmail(id: string, confirmationCode: string, expirationDate: Date): Promise<boolean> {
         const result = await usersCollection.updateOne(
             {_id: new ObjectId(id)},
             {
                 $set: {
-                    'emailConfirmation.lastSendingConfirmEmail': add(new Date(), {minutes: 3}
-                    )
-                }
+                    'emailConfirmation.confirmationCode': confirmationCode,
+                    'emailConfirmation.expirationDate': expirationDate
+                },
+                $push: {'dateSendingConfirmEmail': new Date()}
+            });
+        return result.acknowledged;
+    },
+    async setNewConfirmationCode(id: string, code: string, date: Date): Promise<boolean> {
+        const result = await usersCollection.updateOne(
+            {_id: new ObjectId(id)},
+            {
+                $set: {
+                    'emailConfirmation.confirmationCode': code,
+                    'emailConfirmation.expirationDate': date
+                },
             });
         return result.acknowledged;
     }
-
 };
