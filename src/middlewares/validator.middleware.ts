@@ -1,13 +1,20 @@
 import {Request, Response, NextFunction} from "express";
-import {body, query, validationResult} from 'express-validator';
+import {body, validationResult} from 'express-validator';
 import {APIErrorResultModel} from "../controllers/dto/apiErrorResult.dto";
 import {queryRepository} from "../repositories/query.repository";
+import {usersService} from "../services/users.service";
 
 export const validatorMiddleware = {
     validateRegistrationConfirmationCodeModel: () => [
-        query('code')
+        body('code')
             .exists()
             .withMessage('code is required')
+            .custom(
+                async (code) => {
+                    const result = await usersService.findCorrectConfirmationCode(code);
+                    if (!result) throw new Error();
+                })
+            .withMessage('confirmation code is incorrect, expired or already been applied')
     ],
     validateRegistrationEmailResendingModel: () => [
         body('email')
@@ -16,6 +23,12 @@ export const validatorMiddleware = {
             .withMessage('email is required')
             .matches(/^[\w-.]+@([\w-]+.)+[\w-]{2,4}$/)
             .withMessage('email is wrong')
+            .custom(
+                async (login) => {
+                    const user = await usersService.findUserByEmailOrPassword(login);
+                    if (user) throw new Error();
+                })
+            .withMessage('login is already registered')
     ],
     validateCommentInputModel: () => [
         body('content')
@@ -45,12 +58,25 @@ export const validatorMiddleware = {
             .matches(/^[a-zA-Z0-9_-]*$/)
             .withMessage('login is wrong')
             .exists()
-            .withMessage('login is required'),
+            .withMessage('login is required')
+            .custom(
+        async (login) => {
+            const user = await usersService.findUserByEmailOrPassword(login);
+            if (user) throw new Error();
+        })
+        .withMessage('login is already registered'),
+
         body('password')
             .isLength({min: 6, max: 20})
             .withMessage('length of password must be  6-20 chars')
             .exists()
-            .withMessage('password is required'),
+            .withMessage('password is required')
+            .custom(
+                async (login) => {
+                    const user = await usersService.findUserByEmailOrPassword(login);
+                    if (user) throw new Error();
+                })
+            .withMessage('login is already registered'),
         body('email')
             .trim()
             .exists()

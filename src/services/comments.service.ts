@@ -12,7 +12,7 @@ export const commentsService = {
     async createUserComment({content}: CommentInputModelDto, userId: string, postId:string): Promise<CommentViewModelDto | null> {
         const createdAt = new Date().toISOString();
         const user = await getUserById(userId);
-        const userLogin = user!.login;
+        const userLogin = user!.accountData.login;
         const newUserComment: CommentEntity = {
             userId, createdAt, content, userLogin, postId
         };
