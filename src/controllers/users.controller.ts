@@ -18,7 +18,7 @@ const {
     validateUserInputModel,
     validateResult
 } = validatorMiddleware;
-const {createUser, deleteUserById, findUserByEmailOrPassword, getUserById} = usersService;
+const {registerNewUser, deleteUserById, findUserByEmailOrPassword, getUserById} = usersService;
 const {getAllUsers} = queryRepository;
 
 
@@ -30,7 +30,7 @@ usersRouter.post('/',
         const {login, password, email} = req.body;
         if (await findUserByEmailOrPassword(login)
             || await findUserByEmailOrPassword(email)) return res.sendStatus(400);
-        const result = await createUser(login, email, password);
+        const result = await registerNewUser(login, email, password);
         return result ? res.status(201).json(result) : res.sendStatus(500);
     });
 
