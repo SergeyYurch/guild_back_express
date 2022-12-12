@@ -24,11 +24,11 @@ export const validatorMiddleware = {
             .matches(/^[\w-.]+@([\w-]+.)+[\w-]{2,4}$/)
             .withMessage('email is wrong')
             .custom(
-                async (login) => {
-                    const user = await usersService.findUserByEmailOrPassword(login);
-                    if (user) throw new Error();
+                async (email) => {
+                    const user = await usersService.findUserByEmailOrPassword(email);
+                    if (!user) throw new Error();
                 })
-            .withMessage('email is already registered')
+            .withMessage('email is wrong')
     ],
     validateCommentInputModel: () => [
         body('content')

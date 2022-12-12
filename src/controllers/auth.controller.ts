@@ -90,9 +90,9 @@ authRouter.post('/registration-email-resending',
         console.log(`[authController]:POST/registration-email-resending run`);
         const {email} = req.body;
         const user = await findUserByEmailOrPassword(email);
-        console.log(`[authController]:POST/registration-email-resending user: ${user?.email}`);
-        if (!user) return res.sendStatus(400);
-        const result = await resendingEmail(user.id);
-        if (!result) return res.sendStatus(400);
+        const result = await resendingEmail(user!.id);
+        if (!result) return res.status(400).send(
+            {"errorsMessages":[{"message":"cant\'t send email","field":"email"}]}
+        );
         return res.sendStatus(204);
     });
