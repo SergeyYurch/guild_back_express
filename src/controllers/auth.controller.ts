@@ -11,7 +11,7 @@ import {RegistrationEmailResendingModelDto} from "./dto/registrationEmailResendi
 export const authRouter = Router();
 
 const {
-    validateAuthInputModel,
+    validateLoginInputModel,
     validateUserInputModel,
     validateRegistrationEmailResendingModel,
     validateRegistrationConfirmationCodeModel,
@@ -26,7 +26,7 @@ const {
 } = usersService;
 
 authRouter.post('/login',
-    validateAuthInputModel(),
+    validateLoginInputModel(),
     validateResult,
     async (req: RequestWithBody<LoginInputModel>, res: Response) => {
         const {loginOrEmail, password} = req.body;
