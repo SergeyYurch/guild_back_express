@@ -46,6 +46,15 @@ export const usersService: UsersServiceInterface = {
         return parseUserViewModel(result);
     },
 
+    async findCorrectConfirmationCode(code: string): Promise<boolean> {
+        const user = await findUserByConfirmationCode(code);
+        console.log(`[usersService]: findCorrectConfirmationCode`);
+        if (!user) return false;
+        if (user.emailConfirmation.isConfirmed) return false;
+        if (user.emailConfirmation.expirationDate < new Date()) return false;
+        return true;
+    },
+
     async registerNewUser(login: string, email: string, password: string): Promise<UserViewModelDto | null> {
         console.log(`[usersService]: registerNewUser ${login}`);
         const createdAt = new Date();
@@ -75,7 +84,7 @@ export const usersService: UsersServiceInterface = {
         const user = await getUserById(result);
         if (!user) return null;
         await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
-        await updateSendingConfirmEmail(user.id)
+        await updateSendingConfirmEmail(user.id);
         return parseUserViewModel(user);
     },
     async checkCredentials(credentials: LoginInputModel): Promise<UserViewModelDto | null> {
@@ -91,11 +100,7 @@ export const usersService: UsersServiceInterface = {
     async confirmEmail(code: string): Promise<boolean> {
         console.log(`[usersService]:confirmEmail `);
         const user = await findUserByConfirmationCode(code);
-        console.log(`[usersService]: confirmed user email: ${user?.accountData.email} `);
         if (!user) return false;
-        if (user.emailConfirmation.isConfirmed) return false;
-        if (user.emailConfirmation.expirationDate < new Date()) return false;
-        console.log(`[usersService]:confirmEmail - ok `);
         return await confirmEmail(user.id);
     },
 
@@ -103,11 +108,11 @@ export const usersService: UsersServiceInterface = {
         console.log(`[usersService]:resendingEmail `);
         const user = await getUserById(id);
         if (!user) return false;
-        if(user.emailConfirmation.isConfirmed) return false
+        if (user.emailConfirmation.isConfirmed) return false;
 
-        if(user.emailConfirmation.nextSendingConfirmEmail > new Date()) return false
+        //if(user.emailConfirmation.nextSendingConfirmEmail > new Date()) return false
         const resend: SentMessageInfo = await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
-        await updateSendingConfirmEmail(id)
+        await updateSendingConfirmEmail(id);
         if (resend.accepted.length > 0) return true;
         return false;
     }

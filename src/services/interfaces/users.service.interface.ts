@@ -9,4 +9,5 @@ export interface UsersServiceInterface {
     checkCredentials: (credentials: LoginInputModel) => Promise<UserViewModelDto | null>;
     confirmEmail: (code: string) => Promise<boolean>;
     resendingEmail: (id: string) => Promise<boolean>;
+    findCorrectConfirmationCode:(code: string)=> Promise<boolean>
 }
