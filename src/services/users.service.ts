@@ -10,6 +10,15 @@ import {v4 as uuidv4} from 'uuid';
 import {emailManager} from "../managers/emailManager";
 import add from 'date-fns/add';
 import {SentMessageInfo} from "nodemailer";
+import {RefreshTokenEntity} from "./entities/refreshToken.entity";
+import {jwtService} from "../helpers/jwt-service";
+import {tokensBlackListRepository} from "../repositories/tokensBlackList.repository";
+
+
+export interface UserTokens {
+    accessToken: string,
+    refreshToken: string
+}
 
 const getExpirationDate = () => add(new Date(),
     {
@@ -37,23 +46,21 @@ const parseUserViewModel = (user: UserInDbEntity): UserViewModelDto => {
     };
 };
 
-export const usersService: UsersServiceInterface = {
+
+export const usersService = {
     async deleteUserById(id: string): Promise<boolean> {
         return await deleteUserById(id);
     },
-
     async findUserByEmailOrPassword(loginOrEmail: string): Promise<UserViewModelDto | null> {
         const result = await findUserByEmailOrPassword(loginOrEmail);
         if (!result) return null;
         return parseUserViewModel(result);
     },
-
     async getUserById(id: string): Promise<UserViewModelDto | null> {
         const result = await getUserById(id);
         if (!result) return null;
         return parseUserViewModel(result);
     },
-
     async findCorrectConfirmationCode(code: string): Promise<boolean> {
         const user = await findUserByConfirmationCode(code);
         console.log(`[usersService]: findCorrectConfirmationCode`);
@@ -89,27 +96,26 @@ export const usersService: UsersServiceInterface = {
         await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
         return parseUserViewModel(user);
     },
-
     async registerNewUser(login: string, email: string, password: string): Promise<UserViewModelDto | null> {
         console.log(`[usersService]: registerNewUser ${login}`);
         const createdAt = new Date();
         const passwordSalt = await bcrypt.genSalt(10);
         const passwordHash = await generateHash(password, passwordSalt);
         const newUser: UserEntity = {
-                accountData: {
-                    login,
-                    email,
-                    passwordHash,
-                    passwordSalt,
-                    createdAt
-                },
-                emailConfirmation: {
-                    confirmationCode: getConfirmationCode(),
-                    expirationDate: getExpirationDate(),
-                    isConfirmed: false,
-                    dateSendingConfirmEmail: [new Date()]
-                }
-            };
+            accountData: {
+                login,
+                email,
+                passwordHash,
+                passwordSalt,
+                createdAt
+            },
+            emailConfirmation: {
+                confirmationCode: getConfirmationCode(),
+                expirationDate: getExpirationDate(),
+                isConfirmed: false,
+                dateSendingConfirmEmail: [new Date()]
+            }
+        };
         const newUserId = await createNewUser(newUser);
         if (!newUserId) return null;
         const user = await getUserById(newUserId);
@@ -125,7 +131,6 @@ export const usersService: UsersServiceInterface = {
         if (passwordHash !== user.accountData.passwordHash) return null;
         if (!user.emailConfirmation.isConfirmed) return null;
         return parseUserViewModel(user);
-
     },
     async confirmEmail(code: string): Promise<boolean> {
         console.log(`[usersService]:confirmEmail `);
@@ -133,23 +138,53 @@ export const usersService: UsersServiceInterface = {
         if (!user) return false;
         return await confirmEmail(user.id);
     },
-
     async resendingEmail(id: string): Promise<boolean> {
         console.log(`[usersService]:resendingEmail `);
         const user = await getUserById(id);
         if (!user) return false;
         if (user.emailConfirmation.isConfirmed) return false;
-        const newConfirmationCode =  getConfirmationCode();
-        const newExpirationDate = getExpirationDate()
-        await updateSendingConfirmEmail(user.id,newConfirmationCode, newExpirationDate);
-        const sendingDates =user.emailConfirmation.dateSendingConfirmEmail;
+        const newConfirmationCode = getConfirmationCode();
+        const newExpirationDate = getExpirationDate();
+        await updateSendingConfirmEmail(user.id, newConfirmationCode, newExpirationDate);
+        const sendingDates = user.emailConfirmation.dateSendingConfirmEmail;
         //Если было более 5 отправок письма и последняя менее 5 минут назад отбиваем
-        if(sendingDates.length > 5
-            && sendingDates.slice(-1)[0] < add(new Date(), {minutes:5})) return false
+        if (sendingDates.length > 5
+            && sendingDates.slice(-1)[0] < add(new Date(), {minutes: 5})) return false;
         const resend: SentMessageInfo = await emailManager.sendEmailConfirmation(user.accountData.email, newConfirmationCode);
         // проверяем ответ после отправки письма и обновляем данные в базе по повторной отправке
         // письма
         if (resend.accepted.length > 0) await updateSendingConfirmEmail(id, newConfirmationCode, newExpirationDate);
         return true;
+    },
+    async refreshUserTokens(oldToken: string, userId: string): Promise<UserTokens | null> {
+        const refreshTokenToBlackList:RefreshTokenEntity = {
+            userId,
+            refreshToken:oldToken,
+            device: 'chrome',
+            createdAt: new Date()
+        }
+        const result = await tokensBlackListRepository.saveTokenToBlackList(refreshTokenToBlackList);
+        if (!result) return null;
+        const accessToken = await jwtService.createAccessJWT(userId);
+        const refreshToken = await jwtService.createRefreshJWT(userId);
+        if(!accessToken || !refreshToken) return null
+        return {accessToken, refreshToken};
+    },
+    async userLogin(userId: string): Promise<UserTokens> {
+        const accessToken = await jwtService.createAccessJWT(userId);
+        const refreshToken = await jwtService.createRefreshJWT(userId);
+        return {accessToken, refreshToken};
+    },
+    async userLogout(refreshToken: string, userId: string): Promise<boolean> {
+        return tokensBlackListRepository.saveTokenToBlackList({
+            refreshToken,
+            userId,
+            device: 'chrome',
+            createdAt: new Date(),
+        });
+    },
+    async checkUserRefreshToken(oldToken: string, userId: string): Promise<boolean> {
+        return tokensBlackListRepository.checkTokenInBlackList(oldToken, userId);
     }
+
 };

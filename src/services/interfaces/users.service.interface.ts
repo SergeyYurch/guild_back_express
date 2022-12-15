@@ -11,4 +11,6 @@ export interface UsersServiceInterface {
     confirmEmail: (code: string) => Promise<boolean>;
     resendingEmail: (id: string) => Promise<boolean>;
     findCorrectConfirmationCode:(code: string)=> Promise<boolean>
+    checkTokenInBlackList:(refreshToken:string)=>Promise<boolean>
+    saveTokenToBlackList:(refreshToken:string)=>Promise<boolean>
 }
