@@ -4,6 +4,7 @@ import {PostEntity} from "../services/entities/post.entity";
 import {UserEntity} from "../services/entities/user.entity";
 import {CommentEntity} from "../services/entities/comment.entity";
 import * as dotenv from "dotenv";
+import {RefreshTokenEntity} from "../services/entities/refreshToken.entity";
 dotenv.config();
 
 const mongoUri = process.env.MONGO_URI
@@ -15,7 +16,8 @@ const dbAdapters = client.db();
 export const blogsCollection = dbAdapters.collection<BlogEntity>('blogs')
 export const postsCollection = dbAdapters.collection<PostEntity>('posts')
 export const usersCollection = dbAdapters.collection<UserEntity>('users')
-export const commentsCollection = dbAdapters.collection<CommentEntity>('users')
+export const commentsCollection = dbAdapters.collection<CommentEntity>('comments')
+export const tokensBlackListCollection = dbAdapters.collection<RefreshTokenEntity>('tokensBlackList')
 
 export async function runDB() {
     try{
