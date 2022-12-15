@@ -29,7 +29,7 @@ const {
     checkUserRefreshToken
 } = usersService;
 
-const CookieRefreshTokenExpire =()=> new Date(Date.now() + 1120000);
+const CookieRefreshTokenExpire =()=> new Date(Date.now() + 20000);
 
 authRouter.post('/login',
     validateLoginInputModel(),
