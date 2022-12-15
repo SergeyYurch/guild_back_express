@@ -118,7 +118,7 @@ authRouter.post('/registration-email-resending',
 authRouter.post('/refresh-token',
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/refresh-token run`);
-        const oldRefreshToken = req.cookies;
+        const oldRefreshToken = req.cookies.refreshToken;
         // console.log('oldRefreshToken');
         // console.log(oldRefreshToken);
         try {
