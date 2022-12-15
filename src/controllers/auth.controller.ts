@@ -7,6 +7,7 @@ import {jwtService} from "../helpers/jwt-service";
 import {authBearerMiddleware} from "../middlewares/authBearer.middleware";
 import {UserInputModelDto} from "./dto/userInputModel.dto";
 import {RegistrationEmailResendingModelDto} from "./dto/registrationEmailResendingModel.dto";
+import add from "date-fns/add";
 
 export const authRouter = Router();
 
@@ -29,7 +30,7 @@ const {
     checkUserRefreshToken
 } = usersService;
 
-const CookieRefreshTokenExpire =()=> new Date(Date.now() + 20000);
+const CookieRefreshTokenExpire =()=> add(new Date(), {seconds:20})
 
 authRouter.post('/login',
     validateLoginInputModel(),
@@ -119,22 +120,22 @@ authRouter.post('/refresh-token',
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/refresh-token run`);
         const oldRefreshToken = req.cookies.refreshToken;
-        // console.log('oldRefreshToken');
-        // console.log(oldRefreshToken);
+        console.log('oldRefreshToken');
+        console.log(oldRefreshToken);
         try {
-            // console.log('try in');
+            console.log('try in');
             if (!oldRefreshToken) return res.sendStatus(401);
             const userId = await jwtService.getUserIdByJwtToken(oldRefreshToken, "refresh");
-            // console.log('userId');
-            // console.log(userId);
+            console.log('userId');
+            console.log(userId);
             if (!userId) return res.sendStatus(401);
             const tokenIsMissing = await checkUserRefreshToken(oldRefreshToken, userId);
-            // console.log('tokenIsMissing');
-            // console.log(tokenIsMissing);
+            console.log('tokenIsMissing');
+            console.log(tokenIsMissing);
             if (tokenIsMissing) return res.sendStatus(401);
             const tokensPair = await refreshUserTokens(oldRefreshToken, userId);
-            // console.log('tokensPair');
-            // console.log(tokensPair);
+            console.log('tokensPair');
+            console.log(tokensPair);
             if (!tokensPair) return res.sendStatus(500);
             res.cookie(
                 'refreshToken',
