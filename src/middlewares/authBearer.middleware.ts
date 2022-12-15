@@ -7,7 +7,7 @@ export const authBearerMiddleware =async (req: Request, res: Response, next: Nex
         return res.sendStatus(401);
     }
     const token= req.headers.authorization.split(' ')[1]
-    const userId=await jwtService.getUserIdByJwtToken(token);
+    const userId=await jwtService.getUserIdByJwtToken(token, "access");
     if (userId) {
         req.user= await usersService.getUserById(userId)
         return next()
