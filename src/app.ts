@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser'
 import {testingRouter} from "./controllers/testing.controller";
 import {blogsRouter} from "./controllers/blogs.controller";
 import {postsRouter} from "./controllers/posts.controller";
@@ -9,7 +10,7 @@ import cors from 'cors'
 
 export const app = express();
 app.use(cors())
-
+app.use(cookieParser())
 app.use(express.json())
 app.use('/blogs', blogsRouter)
 app.use('/posts', postsRouter)
