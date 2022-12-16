@@ -4,6 +4,7 @@ import {RefreshTokenEntity} from "../services/entities/refreshToken.entity";
 export const tokensBlackListRepository = {
     async saveTokenToBlackList(refreshToken: RefreshTokenEntity): Promise<boolean> {
         //сохраняем токен в базу и возвращаем true если операция была успешна
+        console.log(`[tokensBlackListRepository]:saveTokenToBlackList token: ${refreshToken}`);
         const result = await tokensBlackListCollection.insertOne(refreshToken);
         return result.acknowledged;
     },
