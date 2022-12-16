@@ -30,7 +30,7 @@ const {
     checkUserRefreshToken
 } = usersService;
 
-const cookieRefreshTokenExpire = () => add(new Date(), {seconds: 20});
+const cookieRefreshTokenExpire = () => add(new Date(), {seconds: 18});
 
 const createRefreshTokenCookie = (res: Response, refreshToken: string) => {
     res.cookie(

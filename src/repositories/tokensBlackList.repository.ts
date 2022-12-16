@@ -9,9 +9,10 @@ export const tokensBlackListRepository = {
         return result.acknowledged;
     },
     async checkTokenInBlackList(refreshToken: string, userId:string): Promise<boolean> {
-        console.log(`[usersRepository]: checkTokenInBlackList ${refreshToken}`);
+        console.log(`[tokensBlackListRepository]: checkTokenInBlackList ${refreshToken}`);
         //проверяем наличие такого токена в блек-листе и возвразщаем true если токет есть
         const result = await tokensBlackListCollection.findOne({ refreshToken});
+        console.log(result);
         return !!result
     },
 
