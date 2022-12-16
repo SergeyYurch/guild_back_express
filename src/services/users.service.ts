@@ -11,7 +11,7 @@ import {emailManager} from "../managers/emailManager";
 import add from 'date-fns/add';
 import {SentMessageInfo} from "nodemailer";
 import {RefreshTokenEntity} from "./entities/refreshToken.entity";
-import {jwtService} from "../helpers/jwt-service";
+import {jwtService} from "../utils/jwt-service";
 import {tokensBlackListRepository} from "../repositories/tokensBlackList.repository";
 
 
@@ -176,7 +176,8 @@ export const usersService = {
         return {accessToken, refreshToken};
     },
     async userLogout(refreshToken: string, userId: string): Promise<boolean> {
-        return tokensBlackListRepository.saveTokenToBlackList({
+        console.log(`[usersService]: userLogout userId:${userId}`);
+        return await tokensBlackListRepository.saveTokenToBlackList({
             refreshToken,
             userId,
             device: 'chrome',
