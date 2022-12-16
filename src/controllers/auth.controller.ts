@@ -3,7 +3,7 @@ import {validatorMiddleware} from "../middlewares/validator.middleware";
 import {RequestWithBody} from "../types/request.type";
 import {LoginInputModel} from "./dto/loginInputModel.dto";
 import {usersService} from "../services/users.service";
-import {jwtService} from "../helpers/jwt-service";
+import {jwtService} from "../utils/jwt-service";
 import {authBearerMiddleware} from "../middlewares/authBearer.middleware";
 import {UserInputModelDto} from "./dto/userInputModel.dto";
 import {RegistrationEmailResendingModelDto} from "./dto/registrationEmailResendingModel.dto";
@@ -30,7 +30,15 @@ const {
     checkUserRefreshToken
 } = usersService;
 
-const CookieRefreshTokenExpire =()=> add(new Date(), {seconds:20})
+const cookieRefreshTokenExpire = () => add(new Date(), {seconds: 20});
+
+const createRefreshTokenCookie = (res: Response, refreshToken: string) => {
+    res.cookie(
+        'refreshToken',
+        refreshToken,
+        {expires: cookieRefreshTokenExpire(), secure: true, httpOnly: true} //secure: true,
+    );
+};
 
 authRouter.post('/login',
     validateLoginInputModel(),
@@ -41,11 +49,7 @@ authRouter.post('/login',
         const user = await checkCredentials({loginOrEmail, password});
         if (!user) return res.sendStatus(401);
         const loginParams = await userLogin(user.id);
-        res.cookie(
-            'refreshToken',
-            loginParams.refreshToken,
-            {expires: CookieRefreshTokenExpire(), secure: true, httpOnly: true}
-        );
+        createRefreshTokenCookie(res, loginParams.refreshToken);
         return res.status(200).send({
             "accessToken": loginParams.accessToken
         });
@@ -137,11 +141,7 @@ authRouter.post('/refresh-token',
             console.log('tokensPair');
             console.log(tokensPair);
             if (!tokensPair) return res.sendStatus(500);
-            res.cookie(
-                'refreshToken',
-                tokensPair.refreshToken,
-                {expires: CookieRefreshTokenExpire(), secure: true, httpOnly: true}
-            );
+            createRefreshTokenCookie(res, tokensPair.refreshToken);
             return res.status(200).send({
                 "accessToken": tokensPair.accessToken
             });
@@ -160,7 +160,7 @@ authRouter.post('/logout',
             if (!userId) return res.sendStatus(401);
             const result = await userLogout(inputRefreshToken, userId);
             if (!result) return res.sendStatus(500);
-            res.clearCookie('refreshToken')
+            res.clearCookie('refreshToken');
             return res.sendStatus(204);
         } catch (error) {
             return res.sendStatus(500);
