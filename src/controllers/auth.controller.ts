@@ -158,6 +158,8 @@ authRouter.post('/logout',
             if (!inputRefreshToken) return res.sendStatus(401);
             const userId = await jwtService.getUserIdByJwtToken(inputRefreshToken, 'refresh');
             if (!userId) return res.sendStatus(401);
+            const tokenIsMissing = await checkUserRefreshToken(inputRefreshToken, userId);
+            if (tokenIsMissing) return res.sendStatus(401);
             const result = await userLogout(inputRefreshToken, userId);
             if (!result) return res.sendStatus(500);
             res.clearCookie('refreshToken');

@@ -7,7 +7,7 @@ const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || '11';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '22';
 
 const expiresIn_Access = '10s';
-const expiresIn_Refresh = '3d';
+const expiresIn_Refresh = '20s';
 
 export type TypeJWT = 'access' | 'refresh'
 
