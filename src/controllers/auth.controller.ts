@@ -8,6 +8,7 @@ import {authBearerMiddleware} from "../middlewares/authBearer.middleware";
 import {UserInputModelDto} from "./dto/userInputModel.dto";
 import {RegistrationEmailResendingModelDto} from "./dto/registrationEmailResendingModel.dto";
 import add from "date-fns/add";
+import {authUsersService} from "../services/authUsers.service";
 
 export const authRouter = Router();
 
@@ -18,17 +19,6 @@ const {
     validateRegistrationConfirmationCodeModel,
     validateResult
 } = validatorMiddleware;
-const {
-    checkCredentials,
-    findUserByEmailOrPassword,
-    registerNewUser,
-    confirmEmail,
-    resendingEmail,
-    userLogin,
-    userLogout,
-    refreshUserTokens,
-    checkUserRefreshToken
-} = usersService;
 
 const cookieRefreshTokenExpire = () => add(new Date(), {seconds: 18});
 
@@ -44,12 +34,11 @@ authRouter.post('/login',
     validateLoginInputModel(),
     validateResult,
     async (req: RequestWithBody<LoginInputModel>, res: Response) => {
-    debugger
         const {loginOrEmail, password} = req.body;
         console.log(`!!!![authRouter] login:${loginOrEmail}`);
-        const user = await checkCredentials({loginOrEmail, password});
+        const user = await authUsersService.checkCredentials({loginOrEmail, password});
         if (!user) return res.sendStatus(401);
-        const loginParams = await userLogin(user.id);
+        const loginParams = await authUsersService.userLogin(user.id);
         createRefreshTokenCookie(res, loginParams.refreshToken);
         return res.status(200).send({
             "accessToken": loginParams.accessToken
@@ -78,7 +67,7 @@ authRouter.post('/registration',
         console.log(`[authController]:POST/registration run`);
         const {login, password, email} = req.body;
         try {
-            const newUser = await registerNewUser(login, email, password);
+            const newUser = await usersService.createNewUser(login, email, password);
             if (newUser) return res.sendStatus(204);
         } catch (error) {
             return res.sendStatus(500);
@@ -94,7 +83,7 @@ authRouter.post('/registration-confirmation',
         console.log(req.body);
         const code = String(req.body.code);
         try {
-            const result = await confirmEmail(code);
+            const result = await authUsersService.confirmEmail(code);
             if (!result) res.sendStatus(400);
             return res.sendStatus(204);
         } catch (error) {
@@ -110,8 +99,8 @@ authRouter.post('/registration-email-resending',
         console.log(`[authController]:POST/registration-email-resending run`);
         const {email} = req.body;
         try {
-            const user = await findUserByEmailOrPassword(email);
-            const result = await resendingEmail(user!.id);
+            const user = await usersService.findUserByEmailOrPassword(email);
+            const result = await authUsersService.resendingEmail(user!.id);
             if (!result) return res.status(400).send(
                 {"errorsMessages": [{"message": "cant\'t send email", "field": "email"}]}
             );
@@ -134,11 +123,11 @@ authRouter.post('/refresh-token',
             console.log('userId');
             console.log(userId);
             if (!userId) return res.sendStatus(401);
-            const tokenIsMissing = await checkUserRefreshToken(oldRefreshToken, userId);
+            const tokenIsMissing = await authUsersService.checkUserRefreshToken(oldRefreshToken, userId);
             console.log('tokenIsMissing');
             console.log(tokenIsMissing);
             if (tokenIsMissing) return res.sendStatus(401);
-            const tokensPair = await refreshUserTokens(oldRefreshToken, userId);
+            const tokensPair = await authUsersService.refreshUserTokens(oldRefreshToken, userId);
             console.log('tokensPair');
             console.log(tokensPair);
             if (!tokensPair) return res.sendStatus(500);
@@ -159,9 +148,9 @@ authRouter.post('/logout',
             if (!inputRefreshToken) return res.sendStatus(401);
             const userId = await jwtService.getUserIdByJwtToken(inputRefreshToken, 'refresh');
             if (!userId) return res.sendStatus(401);
-            const tokenIsMissing = await checkUserRefreshToken(inputRefreshToken, userId);
+            const tokenIsMissing = await authUsersService.checkUserRefreshToken(inputRefreshToken, userId);
             if (tokenIsMissing) return res.sendStatus(401);
-            const result = await userLogout(inputRefreshToken, userId);
+            const result = await authUsersService.userLogout(inputRefreshToken, userId);
             if (!result) return res.sendStatus(500);
             res.clearCookie('refreshToken');
             return res.sendStatus(204);
@@ -169,3 +158,6 @@ authRouter.post('/logout',
             return res.sendStatus(500);
         }
     });
+
+
+
