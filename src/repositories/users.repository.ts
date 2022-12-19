@@ -53,7 +53,7 @@ export const usersRepository: UsersRepositoryInterface = {
         if (!result) return null;
         return parseUserInDbEntity(result);
     },
-    async confirmEmail(id: string): Promise<boolean> {
+    async confirmEmailInDb(id: string): Promise<boolean> {
         const result = await usersCollection.updateOne(
             {_id: new ObjectId(id)},
             {
