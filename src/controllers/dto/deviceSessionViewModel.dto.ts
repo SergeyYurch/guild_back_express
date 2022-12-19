@@ -1,4 +1,4 @@
-export interface DeviceViewModelDto {
+export interface DeviceSessionViewModelDto {
     ip: string;
     title: string;
     lastActiveDate: string;
