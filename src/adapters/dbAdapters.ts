@@ -5,6 +5,7 @@ import {UserEntity} from "../services/entities/user.entity";
 import {CommentEntity} from "../services/entities/comment.entity";
 import * as dotenv from "dotenv";
 import {RefreshTokenEntity} from "../services/entities/refreshToken.entity";
+import {DeviceSessionEntity} from "../services/entities/deviceSession.entity";
 dotenv.config();
 
 const mongoUri = process.env.MONGO_URI
@@ -17,7 +18,8 @@ export const blogsCollection = dbAdapters.collection<BlogEntity>('blogs')
 export const postsCollection = dbAdapters.collection<PostEntity>('posts')
 export const usersCollection = dbAdapters.collection<UserEntity>('users')
 export const commentsCollection = dbAdapters.collection<CommentEntity>('comments')
-export const tokensBlackListCollection = dbAdapters.collection<RefreshTokenEntity>('tokensBlackList')
+export const tokensBlackListCollection = dbAdapters.collection<RefreshTokenEntity>('tokens_black_list')
+export const deviceAuthSessionsCollection = dbAdapters.collection<DeviceSessionEntity>('device_auth_sessions')
 
 export async function runDB() {
     try{
