@@ -3,4 +3,5 @@ export interface DeviceSessionEntity {
     title: string;
     lastActiveDate: string;
     deviceId: string;
+    userId: string;
 }
