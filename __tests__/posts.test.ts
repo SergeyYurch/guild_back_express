@@ -1,6 +1,6 @@
 import request from 'supertest';
 import {app} from "../src/app";
-import {jwtService} from "../src/helpers/jwt-service";
+import {jwtService} from "../src/utils/jwt-service";
 
 const blog1 = {
     name: 'blog1',
