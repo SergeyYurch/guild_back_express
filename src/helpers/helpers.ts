@@ -20,11 +20,13 @@ export const parseQueryPaginator = (req: Request): PaginatorOptionInterface => {
 
 export const pagesCount = (totalCount: number, pageSize: number) => Math.ceil(totalCount / pageSize);
 
-export const generateHash = async (password: string): Promise<{salt:string, pass:string}> => {
+export const generateHash = async (password: string, salt:string): Promise<string> => {
+    return await bcrypt.hash(password, salt);
+};
+
+export const generateHashSalt = async (): Promise<string> => {
     const salt_base = process.env.HASH_SALT_BASE || '54321'
-    const salt = await bcrypt.genSalt(+salt_base);
-    const pass = await bcrypt.hash(password, salt);
-    return {salt, pass}
+    return await bcrypt.genSalt(+salt_base);
 };
 
 export const parseUserViewModel = (user: UserInDbEntity): UserViewModelDto => {
