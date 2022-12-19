@@ -2,7 +2,7 @@ import {UserEntity} from "./entities/user.entity";
 import {usersRepository} from "../repositories/users.repository";
 import {UserViewModelDto} from "../controllers/dto/userViewModel.dto";
 import {
-    generateHash,
+    generateHash, generateHashSalt,
     getConfirmationCode,
     getExpirationDate,
     parseUserViewModel
@@ -23,22 +23,23 @@ export const usersService = {
         if (!result) return null;
         return parseUserViewModel(result);
     },
-    async createNewUser(login: string, email: string, password: string): Promise<UserViewModelDto | null> {
+    async createNewUser(login: string, email: string, password: string, confirmed?:boolean): Promise<UserViewModelDto | null> {
         console.log(`[usersService]: createNewUser ${login}`);
         const createdAt = new Date();
-        const userHash = await generateHash(password);
+        const passwordSalt = await generateHashSalt();
+        const passwordHash = await generateHash(password, passwordSalt);
         const newUser: UserEntity = {
             accountData: {
                 login,
                 email,
-                passwordHash:userHash.pass,
-                passwordSalt:userHash.salt,
+                passwordHash,
+                passwordSalt,
                 createdAt
             },
             emailConfirmation: {
                 confirmationCode: getConfirmationCode(),
                 expirationDate: getExpirationDate(),
-                isConfirmed: true,
+                isConfirmed: !!confirmed,
                 dateSendingConfirmEmail: [new Date()]
             }
         };
@@ -46,7 +47,8 @@ export const usersService = {
         if (!newUserId) return null;
         const user = await usersRepository.getUserById(newUserId);
         if (!user) return null;
+        if (confirmed) return parseUserViewModel(user);
         await emailManager.sendEmailConfirmation(user.accountData.email, user.emailConfirmation.confirmationCode);
         return parseUserViewModel(user);
-    },
+    }
 };
