@@ -9,6 +9,7 @@ import {commentsRouter} from "./controllers/comments.controller";
 import cors from 'cors'
 
 export const app = express();
+app.set('trust proxy', true)
 app.use(cors())
 app.use(cookieParser())
 app.use(express.json())
