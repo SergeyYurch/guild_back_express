@@ -1,7 +1,6 @@
-export interface DeviceSessionEntity {
+export interface AuthSessionEntity {
     ip: string;
     title: string;
     lastActiveDate: string;
-    deviceId: string;
     userId: string;
 }
