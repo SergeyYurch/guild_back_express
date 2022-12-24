@@ -32,108 +32,106 @@ describe('HOST/auth/registration :login user and receiving token, getting info a
         await request(app)
             .delete('/testing/all-data');
         //created new users
-        const newUser1 = await request(app)
-            .post('/users')
-            .auth('admin', 'qwerty', {type: "basic"})
-            .send(user1)
-            .expect(201);
-        const newUser2 = await request(app)
-            .post('/users')
-            .auth('admin', 'qwerty', {type: "basic"})
-            .send(user2)
-            .expect(201);
-
-        //created new blog
-        const newBlog1 = await request(app)
-            .post('/blogs')
-            .auth('admin', 'qwerty', {type: "basic"})
-            .send(blog1);
-
-
-        //created new post
-        const newPost1 = await request(app)
-            .post('/posts')
-            .auth('admin', 'qwerty', {type: "basic"})
-            .send({
-                title: 'post1',
-                shortDescription: 'shortDescription1',
-                content: 'content1',
-                blogId: newBlog1.body.id
-            });
-        blog1Id = newBlog1.body.id;
-        user1Id = newUser1.body.id;
-        user2Id = newUser2.body.id;
-        post1Id = newPost1.body.id;
+        // const newUser1 = await request(app)
+        //     .post('/users')
+        //     .auth('admin', 'qwerty', {type: "basic"})
+        //     .send(user1)
+        //     .expect(201);
+        // const newUser2 = await request(app)
+        //     .post('/users')
+        //     .auth('admin', 'qwerty', {type: "basic"})
+        //     .send(user2)
+        //     .expect(201);
+        //
+        // //created new blog
+        // const newBlog1 = await request(app)
+        //     .post('/blogs')
+        //     .auth('admin', 'qwerty', {type: "basic"})
+        //     .send(blog1);
+        //
+        //
+        // //created new post
+        // const newPost1 = await request(app)
+        //     .post('/posts')
+        //     .auth('admin', 'qwerty', {type: "basic"})
+        //     .send({
+        //         title: 'post1',
+        //         shortDescription: 'shortDescription1',
+        //         content: 'content1',
+        //         blogId: newBlog1.body.id
+        //     });
+        // blog1Id = newBlog1.body.id;
+        // user1Id = newUser1.body.id;
+        // user2Id = newUser2.body.id;
+        // post1Id = newPost1.body.id;
     });
 
     it('should return code 400 If the inputModel has incorrect values', async () => {
         await request(app)
-            .post('/auth/login')
+            .post('/auth/registration')
             .send({
+                "email": "string",
                 "password": "password1"
             })
             .expect(400);
     });
 
-    it('should return code 401 if the password or login is wrong', async () => {
+    it('should return code 204 if input model is correct', async () => {
         await request(app)
-            .post('/auth/login')
+            .post('/auth/registration')
             .send({
-                "loginOrEmail": "wwwwwwwwwwww",
-                "password": "password1"
+                "login": "user1",
+                "password": "string111",
+                "email": "user1@mail.ru"
             })
-            .expect(401);
+            .expect(204);
     });
 
-    it('should return code 200 and  JWT-token', async () => {
-        const result = await request(app)
-            .post('/auth/login')
+    it('should return code 429 if access attempt limit exceeded', async () => {
+        await request(app)
+            .post('/auth/registration')
             .send({
-                "loginOrEmail": "user1",
-                "password": "password1"
+                "login": "user11",
+                "password": "string11",
+                "email": "user11@mail.ru"
             })
-            .expect(200);
+            .expect(204);
 
-        const token = result.body.accessToken;
-        const idFromToken = await jwtService.getUserIdByJwtToken(token);
-        expect(idFromToken).toBe(user1Id);
-    });
-
-    it('should return code 200 JWT-token', async () => {
-        const result = await request(app)
-            .post('/auth/login')
+        await request(app)
+            .post('/auth/registration')
             .send({
-                "loginOrEmail": "user1",
-                "password": "password1"
+                "login": "user2",
+                "password": "string2",
+                "email": "user2@mail.ru"
             })
-            .expect(200);
+            .expect(204);
 
-        const token = result.body.accessToken;
-        const idFromToken = await jwtService.getUserIdByJwtToken(token);
-        expect(idFromToken).toBe(user1Id);
-    });
-
-    it('should return code 200 and user info with correct JWT-token', async () => {
-        const result = await request(app)
-            .post('/auth/login')
+        await request(app)
+            .post('/auth/registration')
             .send({
-                "loginOrEmail": "user1",
-                "password": "password1"
+                "login": "user3",
+                "password": "string3",
+                "email": "user3@mail.ru"
             })
-            .expect(200);
-        const token = result.body.accessToken;
-        const userId = await jwtService.getUserIdByJwtToken(token);
+            .expect(204);
 
-        const info = await request(app)
-            .get('/auth/me')
-            .auth(token, {type: "bearer"})
+        await request(app)
+            .post('/auth/registration')
+            .send({
+                "login": "user4",
+                "password": "string4",
+                "email": "user4@mail.ru"
+            })
+            .expect(204);
 
-
-        expect(info.body).toEqual({
-            login: "user1",
-            email: "email1@gmail.com",
-            userId
-        });
+        await request(app)
+            .post('/auth/registration')
+            .send({
+                "login": "user6",
+                "password": "string6",
+                "email": "user6@mail.ru"
+            })
+            .expect(429);
     });
 });
 
@@ -151,9 +149,11 @@ describe('HOST/auth/login :login user and receiving token, getting info about us
         //created new users
         const newUser1 = await request(app)
             .post('/users')
-            .auth('admin', 'qwerty',  {type: "basic"})
+            .auth('admin', 'qwerty', {type: "basic"})
             .send(user1)
             .expect(201);
+
+
         const newUser2 = await request(app)
             .post('/users')
             .auth('admin', 'qwerty', {type: "basic"})
@@ -211,54 +211,180 @@ describe('HOST/auth/login :login user and receiving token, getting info about us
             })
             .expect(200);
 
-        const cookies = result.get('Set-Cookie')
-
-        const refreshToken = String(cookies.refreshToken)
-        const userIdFromRefreshToken =await jwtService.getUserIdByJwtToken(refreshToken, 'refresh');
+        const cookies = result.get('Set-Cookie');
+        const refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+        const userIdFromRefreshToken = await jwtService.getUserIdByJwtToken(refreshToken, 'refresh');
         expect(userIdFromRefreshToken).toBe(user1Id);
 
         const accessToken = result.body.accessToken;
         const idFromToken = await jwtService.getUserIdByJwtToken(accessToken, 'access');
         expect(idFromToken).toBe(user1Id);
-
-
     });
 
-    it('should return code 200 JWT-token', async () => {
-        const result = await request(app)
+    it('should return code 429 to more than 5 attempts from one IP-address during 10 seconds', async () => {
+        await request(app)
             .post('/auth/login')
             .send({
                 "loginOrEmail": "user1",
                 "password": "password1"
             })
             .expect(200);
+        await request(app)
+            .post('/auth/login')
+            .send({
+                "loginOrEmail": "user1",
+                "password": "password1"
+            })
+            .expect(200);
+        await request(app)
+            .post('/auth/login')
+            .send({
+                "loginOrEmail": "user1",
+                "password": "password1"
+            })
+            .expect(200);
+        await request(app)
+            .post('/auth/login')
+            .send({
+                "loginOrEmail": "user1",
+                "password": "password1"
+            })
+            .expect(200);
+        await request(app)
+            .post('/auth/login')
+            .send({
+                "loginOrEmail": "user1",
+                "password": "password1"
+            })
+            .expect(200);
+        await request(app)
+            .post('/auth/login')
+            .send({
+                "loginOrEmail": "user1",
+                "password": "password1"
+            })
+            .expect(429);
 
-        const token = result.body.accessToken;
-        const idFromToken = await jwtService.getUserIdByJwtToken(token);
+
+    });
+});
+
+describe('HOST/auth/refresh-token ', () => {
+    let user1Id = '';
+    let accessToken = '';
+    let refreshToken = '';
+    let expiredRefreshToken = '';
+    let user2RefreshToken = '';
+
+    beforeAll(async () => {
+        //cleaning dataBase
+        await request(app)
+            .delete('/testing/all-data');
+        //created new users
+
+        const newUser1 = await request(app)
+            .post('/users')
+            .auth('admin', 'qwerty', {type: "basic"})
+            .send(user1)
+            .expect(201);
+
+        //login user
+        const loginResult = await request(app)
+            .post('/auth/login')
+            .send({
+                "loginOrEmail": "user1",
+                "password": "password1"
+            });
+
+        const cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+        user1Id = newUser1.body.id;
+        const sessionInfo = await  jwtService.getSessionInfoByJwtToken(refreshToken)
+        expiredRefreshToken =  await jwtService.createRefreshJWT(user1Id, sessionInfo!.deviceId, String(new Date().getTime()-10000));
+
+    });
+
+    it('should return code 401 no refreshToken', async () => {
+        await request(app)
+            .post('/auth/refresh-token')
+            .expect(401);
+    });
+
+
+
+    it('should return code 401 no refreshToken', async () => {
+        await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${expiredRefreshToken}`)
+            .expect(401);
+    });
+
+    it('should return code 200 and pair of JWT-tokens', async () => {
+        const result = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .expect(200);
+
+        const cookies = result.get('Set-Cookie');
+        const testRefreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+        const userIdFromRefreshToken = await jwtService.getUserIdByJwtToken(testRefreshToken, 'refresh');
+        expect(userIdFromRefreshToken).toBe(user1Id);
+
+        const accessToken = result.body.accessToken;
+        const idFromToken = await jwtService.getUserIdByJwtToken(accessToken, 'access');
         expect(idFromToken).toBe(user1Id);
     });
 
-    it('should return code 200 and user info with correct JWT-token', async () => {
-        const result = await request(app)
-            .post('/auth/login')
-            .send({
-                "loginOrEmail": "user1",
-                "password": "password1"
-            })
+    it('should return code 429 to more than 5 attempts from one IP-address during 10 seconds', async () => {
+
+        let loginResult = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .expect(200);
-        const token = result.body.accessToken;
-        const userId = await jwtService.getUserIdByJwtToken(token);
 
-        const info = await request(app)
-            .get('/auth/me')
-            .auth(token, {type: "bearer"})
+        let cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
 
+        loginResult = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .expect(200);
 
-        expect(info.body).toEqual({
-            login: "user1",
-            email: "email1@gmail.com",
-            userId
-        });
+        cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+
+        loginResult = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .expect(200);
+
+        cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+
+        loginResult = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .expect(200);
+
+        cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+
+        loginResult = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .expect(200);
+
+        cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+
+        loginResult = await request(app)
+            .post('/auth/refresh-token')
+            .set('Cookie', `refreshToken=${refreshToken}`)
+            .expect(429);
+
+        cookies = loginResult.get('Set-Cookie');
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
+
     });
 });
 
