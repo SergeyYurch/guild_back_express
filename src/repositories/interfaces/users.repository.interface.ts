@@ -1,5 +1,5 @@
 import {UserEntity} from "../../services/entities/user.entity";
-import {UserInDbEntity} from "../entitiesRepository/userInDb.entity";
+import {UserInDbEntity} from "../entitiesRepository/user-in-db.entity";
 
 export interface UsersRepositoryInterface {
     findUserByEmailOrPassword: (loginOrEmail: string) => Promise<UserInDbEntity | null>;

@@ -2,7 +2,7 @@ import {usersCollection} from "../adapters/dbAdapters";
 import {ObjectId, WithId} from "mongodb";
 import {UserEntity} from "../services/entities/user.entity";
 import {UsersRepositoryInterface} from "./interfaces/users.repository.interface";
-import {UserInDbEntity} from "./entitiesRepository/userInDb.entity";
+import {UserInDbEntity} from "./entitiesRepository/user-in-db.entity";
 
 const parseUserInDbEntity = (result: WithId<UserEntity>): UserInDbEntity => {
     console.log(' parseUserInDbEntity');
@@ -39,6 +39,7 @@ export const usersRepository: UsersRepositoryInterface = {
         return parseUserInDbEntity(result);
     },
     async createNewUser(user: UserEntity): Promise<string | null> {
+        console.log(`[usersRepository]: createNewUser login: ${user.accountData.login}, e-mail: ${user.accountData.email}`);
         const result = await usersCollection.insertOne(user);
         if (result.acknowledged) return result.insertedId.toString();
         return null;
