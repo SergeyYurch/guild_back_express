@@ -1,7 +1,14 @@
 import {
     RepositoryInterface
 } from "./interfaces/repository.interface";
-import {blogsCollection, commentsCollection, postsCollection, usersCollection} from "../adapters/dbAdapters";
+import {
+    accessAttemptCollection,
+    blogsCollection,
+    commentsCollection,
+    deviceAuthSessionsCollection,
+    postsCollection,
+    usersCollection
+} from "../adapters/dbAdapters";
 
 export const testsRepository: RepositoryInterface = {
     dataBaseClear: async (): Promise<boolean> => {
@@ -10,7 +17,14 @@ export const testsRepository: RepositoryInterface = {
         const resultPosts = await postsCollection.deleteMany({});
         const resultUsers = await usersCollection.deleteMany({});
         const resultComments = await commentsCollection.deleteMany({});
-        return resultBlogs.acknowledged && resultPosts.acknowledged && resultUsers.acknowledged&& resultComments.acknowledged;
+        const resultDeviceAuthSession = await deviceAuthSessionsCollection.deleteMany({});
+        const resultAccessAttempt = await accessAttemptCollection.deleteMany({});
+        return resultBlogs.acknowledged
+            && resultPosts.acknowledged
+            && resultUsers.acknowledged
+            && resultComments.acknowledged
+            &&resultDeviceAuthSession.acknowledged
+            && resultAccessAttempt.acknowledged;
     }
 
 };
