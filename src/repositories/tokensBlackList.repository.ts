@@ -1,5 +1,5 @@
 import {tokensBlackListCollection} from "../adapters/dbAdapters";
-import {RefreshTokenEntity} from "../services/entities/refreshToken.entity";
+import {RefreshTokenEntity} from "../services/entities/refresh-token.entity";
 
 export const tokensBlackListRepository = {
     async saveTokenToBlackList(refreshToken: RefreshTokenEntity): Promise<boolean> {
