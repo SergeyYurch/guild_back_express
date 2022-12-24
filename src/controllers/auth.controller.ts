@@ -3,14 +3,19 @@ import {validatorMiddleware} from "../middlewares/validator.middleware";
 import {RequestWithBody} from "../types/request.type";
 import {LoginInputModel} from "./dto/loginInputModel.dto";
 import {usersService} from "../services/users.service";
-import {jwtService} from "../utils/jwt-service";
 import {authBearerMiddleware} from "../middlewares/authBearer.middleware";
 import {UserInputModelDto} from "./dto/userInputModel.dto";
 import {RegistrationEmailResendingModelDto} from "./dto/registrationEmailResendingModel.dto";
-import add from "date-fns/add";
-import {authUsersService} from "../services/authUsers.service";
+import {authService} from "../services/auth.service";
+import {getDeviceInfo, setRefreshTokenToCookie} from "../helpers/helpers";
+import {
+    refreshTokenValidator
+} from "../middlewares/refresh-token-validator.middleware";
+import {jwtService} from "../utils/jwt-service";
+import {accessAttemptCounter} from "../middlewares/access-attempt-counter.middleware";
 
 export const authRouter = Router();
+
 
 const {
     validateLoginInputModel,
@@ -20,26 +25,19 @@ const {
     validateResult
 } = validatorMiddleware;
 
-const cookieRefreshTokenExpire = () => add(new Date(), {seconds: 18});
-
-const createRefreshTokenCookie = (res: Response, refreshToken: string) => {
-    res.cookie(
-        'refreshToken',
-        refreshToken,
-        {expires: cookieRefreshTokenExpire(), secure: true, httpOnly: true} //secure: true,
-    );
-};
-
 authRouter.post('/login',
     validateLoginInputModel(),
     validateResult,
+    accessAttemptCounter,
     async (req: RequestWithBody<LoginInputModel>, res: Response) => {
         const {loginOrEmail, password} = req.body;
         console.log(`!!!![authRouter] login:${loginOrEmail}`);
-        const user = await authUsersService.checkCredentials({loginOrEmail, password});
+        const user = await authService.checkCredentials({loginOrEmail, password});
         if (!user) return res.sendStatus(401);
-        const loginParams = await authUsersService.userLogin(user.id);
-        createRefreshTokenCookie(res, loginParams.refreshToken);
+        const {ip, title} = getDeviceInfo(req);
+        const loginParams = await authService.userLogin(user.id, ip, title);
+        if (!loginParams) return res.sendStatus(500);
+        setRefreshTokenToCookie(res, loginParams.refreshToken);
         return res.status(200).send({
             "accessToken": loginParams.accessToken
         });
@@ -63,6 +61,7 @@ authRouter.get('/me',
 authRouter.post('/registration',
     validateUserInputModel(),
     validateResult,
+    accessAttemptCounter,
     async (req: RequestWithBody<UserInputModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration run`);
         const {login, password, email} = req.body;
@@ -78,12 +77,13 @@ authRouter.post('/registration',
 authRouter.post('/registration-confirmation',
     validateRegistrationConfirmationCodeModel(),
     validateResult,
+    accessAttemptCounter,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/registration-confirmation run`);
         console.log(req.body);
         const code = String(req.body.code);
         try {
-            const result = await authUsersService.confirmEmail(code);
+            const result = await authService.confirmEmail(code);
             if (!result) res.sendStatus(400);
             return res.sendStatus(204);
         } catch (error) {
@@ -95,12 +95,13 @@ authRouter.post('/registration-confirmation',
 authRouter.post('/registration-email-resending',
     validateRegistrationEmailResendingModel(),
     validateResult,
+    accessAttemptCounter,
     async (req: RequestWithBody<RegistrationEmailResendingModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration-email-resending run`);
         const {email} = req.body;
         try {
             const user = await usersService.findUserByEmailOrPassword(email);
-            const result = await authUsersService.resendingEmail(user!.id);
+            const result = await authService.resendingEmail(user!.id);
             if (!result) return res.status(400).send(
                 {"errorsMessages": [{"message": "cant\'t send email", "field": "email"}]}
             );
@@ -111,27 +112,16 @@ authRouter.post('/registration-email-resending',
     });
 
 authRouter.post('/refresh-token',
+    accessAttemptCounter,
+    refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/refresh-token run`);
-        const oldRefreshToken = req.cookies.refreshToken;
-        console.log('oldRefreshToken');
-        console.log(oldRefreshToken);
         try {
-            console.log('try in');
-            if (!oldRefreshToken) return res.sendStatus(401);
-            const userId = await jwtService.getUserIdByJwtToken(oldRefreshToken, "refresh");
-            console.log('userId');
-            console.log(userId);
-            if (!userId) return res.sendStatus(401);
-            const tokenIsMissing = await authUsersService.checkUserRefreshToken(oldRefreshToken, userId);
-            console.log('tokenIsMissing');
-            console.log(tokenIsMissing);
-            if (tokenIsMissing) return res.sendStatus(401);
-            const tokensPair = await authUsersService.refreshUserTokens(oldRefreshToken, userId);
-            console.log('tokensPair');
-            console.log(tokensPair);
+            const {ip, title} = getDeviceInfo(req);
+            const userId = req.user?.id;
+            const tokensPair = await authService.userLogin(userId!, ip, title);
             if (!tokensPair) return res.sendStatus(500);
-            createRefreshTokenCookie(res, tokensPair.refreshToken);
+            setRefreshTokenToCookie(res, tokensPair.refreshToken);
             return res.status(200).send({
                 "accessToken": tokensPair.accessToken
             });
@@ -141,16 +131,12 @@ authRouter.post('/refresh-token',
     });
 
 authRouter.post('/logout',
+    refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/logout run`);
-        const inputRefreshToken = req.cookies?.refreshToken;
+        const inputRefreshToken = req.cookies.refreshToken;
         try {
-            if (!inputRefreshToken) return res.sendStatus(401);
-            const userId = await jwtService.getUserIdByJwtToken(inputRefreshToken, 'refresh');
-            if (!userId) return res.sendStatus(401);
-            const tokenIsMissing = await authUsersService.checkUserRefreshToken(inputRefreshToken, userId);
-            if (tokenIsMissing) return res.sendStatus(401);
-            const result = await authUsersService.userLogout(inputRefreshToken, userId);
+            const result = await authService.userLogout(inputRefreshToken);
             if (!result) return res.sendStatus(500);
             res.clearCookie('refreshToken');
             return res.sendStatus(204);
