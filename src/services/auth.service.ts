@@ -2,7 +2,7 @@ import {LoginInputModel} from "../controllers/dto/loginInputModel.dto";
 import {usersRepository} from "../repositories/users.repository";
 import {UserViewModelDto} from "../controllers/dto/userViewModel.dto";
 import {
-    generateHash,
+    generatePassHash,
     getConfirmationCode,
     getExpirationDate,
     parseUserViewModel
@@ -10,15 +10,13 @@ import {
 import {emailManager} from "../managers/emailManager";
 import add from 'date-fns/add';
 import {SentMessageInfo} from "nodemailer";
-import {RefreshTokenEntity} from "./entities/refreshToken.entity";
 import {jwtService} from "../utils/jwt-service";
-import {tokensBlackListRepository} from "../repositories/tokensBlackList.repository";
-import {UserTokensPairInterface} from "./entities/userTokensPair.interface";
-import {deviceAuthSessionsRepository} from "../repositories/deviceAuthSessions.repository";
+import {UserTokensPairInterface} from "./entities/user-tokens-pair.interface";
+import {authSessionsRepository} from "../repositories/auth-sessions.repository";
 import {DeviceSessionViewModelDto} from "../controllers/dto/deviceSessionViewModel.dto";
+import {AuthSessionInDb} from "../repositories/entitiesRepository/auth-session-in-db.interface";
 
-
-export const authUsersService = {
+export const authService = {
     async findCorrectConfirmationCode(code: string): Promise<boolean> {
         const user = await usersRepository.findUserByConfirmationCode(code);
         console.log(`[usersService]: findCorrectConfirmationCode`);
@@ -31,7 +29,7 @@ export const authUsersService = {
         const {loginOrEmail, password} = credentials;
         const user = await usersRepository.findUserByEmailOrPassword(loginOrEmail);
         if (!user) return null;
-        const passwordHash = await generateHash(password, user.accountData.passwordSalt);
+        const passwordHash = generatePassHash(password, user.accountData.passwordSalt);
         if (passwordHash !== user.accountData.passwordHash) return null;
         if (!user.emailConfirmation.isConfirmed) return null;
         return parseUserViewModel(user);
@@ -60,47 +58,64 @@ export const authUsersService = {
         if (resend.accepted.length > 0) await usersRepository.updateSendingConfirmEmail(id, newConfirmationCode, newExpirationDate);
         return true;
     },
-    async refreshUserTokens(oldToken: string, userId: string): Promise<UserTokensPairInterface | null> {
-        const refreshTokenToBlackList: RefreshTokenEntity = {
-            userId,
-            refreshToken: oldToken,
-            device: 'chrome',
-            createdAt: new Date()
-        };
-        const result = await tokensBlackListRepository.saveTokenToBlackList(refreshTokenToBlackList);
-        if (!result) return null;
-        const accessToken = await jwtService.createAccessJWT(userId);
-        const refreshToken = await jwtService.createRefreshJWT(userId);
-        if (!accessToken || !refreshToken) return null;
-        return {accessToken, refreshToken};
-    },
-    async userLogin(userId: string): Promise<UserTokensPairInterface> {
-        const accessToken = await jwtService.createAccessJWT(userId);
-        const refreshToken = await jwtService.createRefreshJWT(userId);
-        return {accessToken, refreshToken};
-    },
-    async userLogout(refreshToken: string, userId: string): Promise<boolean> {
-        console.log(`[usersService]: userLogout userId:${userId}`);
-        return await tokensBlackListRepository.saveTokenToBlackList({
-            refreshToken,
-            userId,
-            device: 'chrome',
-            createdAt: new Date(),
+    async userLogin(userId: string, ip: string, title: string): Promise<UserTokensPairInterface | null> {
+        const lastActiveDate = new Date();
+        console.log(`[authService]-userLogin: lastActiveDate: ${lastActiveDate}`);
+        const deviceId = await authSessionsRepository.saveDeviceAuthSession({
+            ip,
+            title,
+            lastActiveDate,
+            userId
         });
+        if (!deviceId) return null;
+        const accessToken = await jwtService.createAccessJWT(userId);
+        const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, String(lastActiveDate.getTime()));
+        return {accessToken, refreshToken};
     },
-    async checkUserRefreshToken(oldToken: string, userId: string): Promise<boolean> {
-        return tokensBlackListRepository.checkTokenInBlackList(oldToken, userId);
+    async userLogout(refreshToken: string): Promise<boolean> {
+        const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
+        console.log(`[usersService]: userLogout`);
+        if (!userInfo) return false;
+        await authSessionsRepository.deleteSessionById(userInfo.deviceId);
+        return true;
     },
-
+    async checkDeviceSession(ip: string, title: string, refreshToken: string): Promise<string | null> {
+        const userInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
+        console.log(`[checkDeviceSession]: userId:${userInfoFromToken!.userId}`);
+        console.log(`[checkDeviceSession]: deviceId:${userInfoFromToken!.deviceId}`);
+        console.log(`[checkDeviceSession]: lastActiveDate:${userInfoFromToken!.lastActiveDate}`);
+        if (!userInfoFromToken) return null;
+        const sessionInDb = await authSessionsRepository.findDeviceAuthSession(userInfoFromToken.deviceId);
+        console.log(`[checkDeviceSession]: sessionInDb:${sessionInDb}`);
+        if (!sessionInDb) return null;
+        if (sessionInDb.ip !== ip
+            || sessionInDb.title !== title
+            || sessionInDb.lastActiveDate > userInfoFromToken.lastActiveDate
+            || sessionInDb.userId !== userInfoFromToken.userId) return null;
+        return userInfoFromToken.userId;
+    },
     async getAllSessionByUserId(userId: string): Promise<DeviceSessionViewModelDto[]> {
-        const sessions = await deviceAuthSessionsRepository.getAllSessionByUserId(userId);
+        const sessions = await authSessionsRepository.getAllSessionByUserId(userId);
         return sessions.map(s => ({
             ip: s.ip,
             title: s.title,
-            lastActiveDate: s.lastActiveDate,
+            lastActiveDate: s.lastActiveDate.toISOString(),
             deviceId: s.deviceId
         }));
-
+    },
+    async getAuthSessionById(deviceId: string): Promise<AuthSessionInDb | null> {
+        return await authSessionsRepository.getDeviceAuthSessionById(deviceId);
+    },
+    async deleteAllSessionExcludeCurrent(refreshToken: string): Promise<boolean> {
+        const userInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
+        if (!userInfoFromToken) return false;
+        const sessionInDb = await authSessionsRepository.findDeviceAuthSession(userInfoFromToken.deviceId);
+        if (!sessionInDb) return false;
+        return await authSessionsRepository.deleteSessionExcludeId(sessionInDb.deviceId, sessionInDb.userId);
+    },
+    async deleteSessionById(deviceId: string): Promise<boolean> {
+        return await authSessionsRepository.deleteSessionById(deviceId);
     }
+
 
 };
