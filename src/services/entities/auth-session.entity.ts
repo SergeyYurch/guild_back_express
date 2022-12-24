@@ -1,6 +1,6 @@
 export interface AuthSessionEntity {
     ip: string;
     title: string;
-    lastActiveDate: string;
+    lastActiveDate: Date;
     userId: string;
 }
