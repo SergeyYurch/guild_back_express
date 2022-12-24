@@ -4,8 +4,10 @@ import {PostEntity} from "../services/entities/post.entity";
 import {UserEntity} from "../services/entities/user.entity";
 import {CommentEntity} from "../services/entities/comment.entity";
 import * as dotenv from "dotenv";
-import {RefreshTokenEntity} from "../services/entities/refreshToken.entity";
-import {DeviceSessionInDb} from "../repositories/entitiesRepository/deviceSessionInDb.interface";
+import {RefreshTokenEntity} from "../services/entities/refresh-token.entity";
+import {AuthSessionInDb} from "../repositories/entitiesRepository/auth-session-in-db.interface";
+import {AuthSessionEntity} from "../services/entities/auth-session.entity";
+import {AccessAttemptInDb} from "../repositories/entitiesRepository/access-attempt-in-db.interface";
 dotenv.config();
 
 const mongoUri = process.env.MONGO_URI
@@ -19,7 +21,8 @@ export const postsCollection = dbAdapters.collection<PostEntity>('posts')
 export const usersCollection = dbAdapters.collection<UserEntity>('users')
 export const commentsCollection = dbAdapters.collection<CommentEntity>('comments')
 export const tokensBlackListCollection = dbAdapters.collection<RefreshTokenEntity>('tokens_black_list')
-export const deviceAuthSessionsCollection = dbAdapters.collection<DeviceSessionInDb>('device_auth_sessions')
+export const deviceAuthSessionsCollection = dbAdapters.collection<AuthSessionEntity>('device_auth_sessions')
+export const accessAttemptCollection = dbAdapters.collection<AccessAttemptInDb>('access_attempt')
 
 export async function runDB() {
     try{
