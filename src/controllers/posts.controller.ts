@@ -84,7 +84,6 @@ postsRouter.delete('/:id',
         return result ? res.sendStatus(204) : res.sendStatus(500);
     });
 
-
 postsRouter.post(
     '/:postId/comments',
     authBearerMiddleware,
@@ -106,7 +105,6 @@ postsRouter.post(
         const createdComment = await createUserComment({content}, userId, postId);
         return createdComment ? res.status(201).json(createdComment) : res.sendStatus(500);
     });
-
 
 postsRouter.get('/:postId/comments',
     async (req: RequestWithIdAndBody<CommentInputModelDto>, res: Response) => {
