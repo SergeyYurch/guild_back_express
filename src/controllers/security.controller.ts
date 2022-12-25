@@ -5,6 +5,7 @@ import {getDeviceInfo} from "../helpers/helpers";
 import {authService} from "../services/auth.service";
 import {refreshTokenValidator} from "../middlewares/refresh-token-validator.middleware";
 import {jwtService} from "../utils/jwt-service";
+import {accessAttemptCounter} from '../middlewares/access-attempt-counter.middleware';
 
 export const securityRouter = Router();
 
@@ -12,7 +13,8 @@ securityRouter.get('/devices',
     refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`!!!![securityRouter]:GET /devices`);
-        const refreshToken = req.cookies.refreshToken;
+        const refreshToken = req.cookies.RefreshToken;
+
         try {
             const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
             const result = await authService.getAllSessionByUserId(userInfo!.userId);
@@ -28,7 +30,7 @@ securityRouter.delete('/devices',
     async (req: Request, res: Response) => {
         console.log(`!!!![securityRouter]:GET /devices`);
         try {
-            const result = await authService.deleteAllSessionExcludeCurrent(req.cookies.refreshToken);
+            const result = await authService.deleteAllSessionExcludeCurrent(req.cookies.RefreshToken);
             if (result) return res.sendStatus(204);
             return res.sendStatus(500);
         } catch (error) {
@@ -40,17 +42,18 @@ securityRouter.delete('/devices',
 securityRouter.delete('/devices/:deviceId',
     refreshTokenValidator,
     async (req: RequestWithId, res: Response) => {
-        console.log(`!!!![securityRouter]:GET /devices`);
+        console.log(`!!!![securityRouter]:DELETE/devices/deviceId`);
         try {
-            const refreshToken = req.cookies.refreshToken;
+            const refreshToken = req.cookies.RefreshToken;
             const deviceId = req.params.deviceId;
             if (!ObjectId.isValid(deviceId)) return res.sendStatus(404);
             const authSession = await authService.getAuthSessionById(deviceId);
+            console.log(`!!!![securityRouter]::DELETE/devices/deviceId authSession:${authSession}`);
             if (!authSession) return res.sendStatus(404);
             const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
-            if (authSession.userId !== userInfo!.userId) res.sendStatus(403);
+            if (authSession.userId !== userInfo!.userId) return res.sendStatus(403);
             const result = await authService.deleteSessionById(deviceId);
-            if (!result) res.sendStatus(500);
+            if (!result) return res.sendStatus(500);
             return res.sendStatus(204);
         } catch (error) {
             return res.sendStatus(500);
