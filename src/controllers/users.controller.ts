@@ -18,7 +18,7 @@ const {
     validateUserInputModel,
     validateResult
 } = validatorMiddleware;
-const {createNewUser, deleteUserById, findUserByEmailOrPassword, getUserById} = usersService;
+const {createNewUser, deleteUserById, findUserByEmailOrLogin, getUserById} = usersService;
 const {getAllUsers} = queryRepository;
 
 
@@ -28,8 +28,8 @@ usersRouter.post('/',
     validateResult,
     async (req: RequestWithBody<UserInputModelDto>, res: Response) => {
         const {login, password, email} = req.body;
-        if (await findUserByEmailOrPassword(login)
-            || await findUserByEmailOrPassword(email)) return res.sendStatus(400);
+        if (await findUserByEmailOrLogin(login)
+            || await findUserByEmailOrLogin(email)) return res.sendStatus(400);
         const result = await createNewUser(login, email, password, true);
         return result ? res.status(201).json(result) : res.sendStatus(500);
     });
