@@ -4,7 +4,6 @@ import {CommentEntity} from "../services/entities/comment.entity";
 import {CommentInputModelDto} from "../controllers/dto/commentInputModel.dto";
 
 export const commentsRepository = {
-
     createNewUserComment: async (comment: CommentEntity): Promise<string | null> => {
         const result = await commentsCollection.insertOne(comment);
         if (result.acknowledged) return result.insertedId.toString();
