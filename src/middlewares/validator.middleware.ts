@@ -3,6 +3,7 @@ import {body, validationResult} from 'express-validator';
 import {APIErrorResultModel} from "../controllers/dto/apiErrorResult.dto";
 import {queryRepository} from "../repositories/query.repository";
 import {usersService} from "../services/users.service";
+import {authService} from "../services/auth.service";
 
 export const validatorMiddleware = {
     validateRegistrationConfirmationCodeModel: () => [
@@ -11,7 +12,7 @@ export const validatorMiddleware = {
             .withMessage('code is required')
             .custom(
                 async (code) => {
-                    const result = await usersService.findCorrectConfirmationCode(code);
+                    const result = await authService.findCorrectConfirmationCode(code);
                     if (!result) throw new Error();
                 })
             .withMessage('confirmation code is incorrect, expired or already been applied')
@@ -25,7 +26,7 @@ export const validatorMiddleware = {
             .withMessage('email is wrong')
             .custom(
                 async (email) => {
-                    const user = await usersService.findUserByEmailOrPassword(email);
+                    const user = await usersService.findUserByEmailOrLogin(email);
                     if (!user) throw new Error();
                 })
             .withMessage('email is wrong')
@@ -60,7 +61,7 @@ export const validatorMiddleware = {
             .exists()
             .withMessage('login is required')
             .custom(async (login) => {
-                const user = await usersService.findUserByEmailOrPassword(login);
+                const user = await usersService.findUserByEmailOrLogin(login);
                 if (user) throw new Error();
             })
             .withMessage('login is already registered'),
@@ -77,7 +78,7 @@ export const validatorMiddleware = {
             .matches(/^[\w-.]+@([\w-]+.)+[\w-]{2,4}$/)
             .withMessage('email is wrong')
             .custom(async (email) => {
-                const user = await usersService.findUserByEmailOrPassword(email);
+                const user = await usersService.findUserByEmailOrLogin(email);
                 if (user) throw new Error();
             })
             .withMessage('email is already registered'),
