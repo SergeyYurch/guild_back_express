@@ -2,9 +2,9 @@ import {UserEntity} from "./entities/user.entity";
 import {usersRepository} from "../repositories/users.repository";
 import {UserViewModelDto} from "../controllers/dto/userViewModel.dto";
 import {
-    generateHash, generateHashSalt,
+    generatePassHash, generateHashSalt,
     getConfirmationCode,
-    getExpirationDate,
+    getConfirmationEmailExpirationDate,
     parseUserViewModel
 } from "../helpers/helpers";
 import {emailManager} from "../managers/emailManager";
@@ -13,8 +13,8 @@ export const usersService = {
     async deleteUserById(id: string): Promise<boolean> {
         return await usersRepository.deleteUserById(id);
     },
-    async findUserByEmailOrPassword(loginOrEmail: string): Promise<UserViewModelDto | null> {
-        const result = await usersRepository.findUserByEmailOrPassword(loginOrEmail);
+    async findUserByEmailOrLogin(loginOrEmail: string): Promise<UserViewModelDto | null> {
+        const result = await usersRepository.findUserByEmailOrLogin(loginOrEmail);
         if (!result) return null;
         return parseUserViewModel(result);
     },
@@ -23,11 +23,11 @@ export const usersService = {
         if (!result) return null;
         return parseUserViewModel(result);
     },
-    async createNewUser(login: string, email: string, password: string, confirmed?:boolean): Promise<UserViewModelDto | null> {
+    async createNewUser(login: string, email: string, password: string, confirmed?: boolean): Promise<UserViewModelDto | null> {
         console.log(`[usersService]: createNewUser ${login}`);
         const createdAt = new Date();
         const passwordSalt = await generateHashSalt();
-        const passwordHash = await generateHash(password, passwordSalt);
+        const passwordHash = generatePassHash(password, passwordSalt)
         const newUser: UserEntity = {
             accountData: {
                 login,
@@ -38,7 +38,7 @@ export const usersService = {
             },
             emailConfirmation: {
                 confirmationCode: getConfirmationCode(),
-                expirationDate: getExpirationDate(),
+                expirationDate: getConfirmationEmailExpirationDate(),
                 isConfirmed: !!confirmed,
                 dateSendingConfirmEmail: [new Date()]
             }
