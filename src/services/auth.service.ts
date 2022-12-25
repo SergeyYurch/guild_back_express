@@ -4,7 +4,7 @@ import {UserViewModelDto} from "../controllers/dto/userViewModel.dto";
 import {
     generatePassHash,
     getConfirmationCode,
-    getExpirationDate,
+    getConfirmationEmailExpirationDate,
     parseUserViewModel
 } from "../helpers/helpers";
 import {emailManager} from "../managers/emailManager";
@@ -15,6 +15,7 @@ import {UserTokensPairInterface} from "./entities/user-tokens-pair.interface";
 import {authSessionsRepository} from "../repositories/auth-sessions.repository";
 import {DeviceSessionViewModelDto} from "../controllers/dto/deviceSessionViewModel.dto";
 import {AuthSessionInDb} from "../repositories/entitiesRepository/auth-session-in-db.interface";
+import {REFRESH_TOKEN_LIFE_PERIOD} from '../utils/settings-const';
 
 export const authService = {
     async findCorrectConfirmationCode(code: string): Promise<boolean> {
@@ -27,7 +28,7 @@ export const authService = {
     },
     async checkCredentials(credentials: LoginInputModel): Promise<UserViewModelDto | null> {
         const {loginOrEmail, password} = credentials;
-        const user = await usersRepository.findUserByEmailOrPassword(loginOrEmail);
+        const user = await usersRepository.findUserByEmailOrLogin(loginOrEmail);
         if (!user) return null;
         const passwordHash = generatePassHash(password, user.accountData.passwordSalt);
         if (passwordHash !== user.accountData.passwordHash) return null;
@@ -46,7 +47,7 @@ export const authService = {
         if (!user) return false;
         if (user.emailConfirmation.isConfirmed) return false;
         const newConfirmationCode = getConfirmationCode();
-        const newExpirationDate = getExpirationDate();
+        const newExpirationDate = getConfirmationEmailExpirationDate();
         await usersRepository.updateSendingConfirmEmail(user.id, newConfirmationCode, newExpirationDate);
         const sendingDates = user.emailConfirmation.dateSendingConfirmEmail;
         //Если было более 5 отправок письма и последняя менее 5 минут назад отбиваем
@@ -59,12 +60,17 @@ export const authService = {
         return true;
     },
     async userLogin(userId: string, ip: string, title: string): Promise<UserTokensPairInterface | null> {
+        console.log(`[authService]/userLogin  started`);
+        const previousSession = await authSessionsRepository.checkPreviousUserSessionFromThisDevice(userId, ip, title)
+        if(previousSession) await authSessionsRepository.deleteSessionById(previousSession)
         const lastActiveDate = new Date();
-        console.log(`[authService]-userLogin: lastActiveDate: ${lastActiveDate}`);
+        const expiresDate = add(new Date(), {[REFRESH_TOKEN_LIFE_PERIOD.units]: REFRESH_TOKEN_LIFE_PERIOD.amount});
+        console.log(`[authService]/userLogin  expiresDate = ${expiresDate}`);
         const deviceId = await authSessionsRepository.saveDeviceAuthSession({
             ip,
             title,
             lastActiveDate,
+            expiresDate,
             userId
         });
         if (!deviceId) return null;
@@ -76,21 +82,26 @@ export const authService = {
         const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
         console.log(`[usersService]: userLogout`);
         if (!userInfo) return false;
-        await authSessionsRepository.deleteSessionById(userInfo.deviceId);
-        return true;
+        return authSessionsRepository.deleteSessionById(userInfo.deviceId);
     },
     async checkDeviceSession(ip: string, title: string, refreshToken: string): Promise<string | null> {
         const userInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
-        console.log(`[checkDeviceSession]: userId:${userInfoFromToken!.userId}`);
-        console.log(`[checkDeviceSession]: deviceId:${userInfoFromToken!.deviceId}`);
-        console.log(`[checkDeviceSession]: lastActiveDate:${userInfoFromToken!.lastActiveDate}`);
         if (!userInfoFromToken) return null;
+        console.log(`[checkDeviceSession]: InToken/deviceId:${userInfoFromToken.deviceId}`);
         const sessionInDb = await authSessionsRepository.findDeviceAuthSession(userInfoFromToken.deviceId);
-        console.log(`[checkDeviceSession]: sessionInDb:${sessionInDb}`);
         if (!sessionInDb) return null;
+        console.log(`[checkDeviceSession]: Input/ip:${ip}`);
+        console.log(`[checkDeviceSession]: InDb/ip:${sessionInDb?.ip}`);
+        console.log(`[checkDeviceSession]: Input/title:${title}`);
+        console.log(`[checkDeviceSession]: InDb/title:${sessionInDb.title}`);
+        console.log(`[checkDeviceSession]: InToken/lastActiveDate:${userInfoFromToken.lastActiveDate}`);
+        console.log(`[checkDeviceSession]: InDb/lastActiveDate:${sessionInDb.lastActiveDate}`);
+        console.log(`[checkDeviceSession]: InToken/userId:${userInfoFromToken.userId}`);
+        console.log(`[checkDeviceSession]: InDb/userId:${sessionInDb.userId}`);
+        const lastActiveDateFromToken =  new Date(userInfoFromToken.lastActiveDate)
         if (sessionInDb.ip !== ip
             || sessionInDb.title !== title
-            || sessionInDb.lastActiveDate > userInfoFromToken.lastActiveDate
+            || sessionInDb.lastActiveDate > lastActiveDateFromToken
             || sessionInDb.userId !== userInfoFromToken.userId) return null;
         return userInfoFromToken.userId;
     },
@@ -107,9 +118,14 @@ export const authService = {
         return await authSessionsRepository.getDeviceAuthSessionById(deviceId);
     },
     async deleteAllSessionExcludeCurrent(refreshToken: string): Promise<boolean> {
+        console.log(`[authService]/deleteAllSessionExcludeCurrent started`);
         const userInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
+        console.log(`[authService]/deleteAllSessionExcludeCurrent deviceId:${userInfoFromToken?.deviceId}`);
+
         if (!userInfoFromToken) return false;
         const sessionInDb = await authSessionsRepository.findDeviceAuthSession(userInfoFromToken.deviceId);
+        console.log(`[authService]/deleteAllSessionExcludeCurrent userId:${sessionInDb?.userId}`);
+
         if (!sessionInDb) return false;
         return await authSessionsRepository.deleteSessionExcludeId(sessionInDb.deviceId, sessionInDb.userId);
     },
