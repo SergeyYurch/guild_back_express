@@ -47,6 +47,7 @@ authRouter.post('/login',
 authRouter.get('/me',
     authBearerMiddleware,
     async (req: RequestWithBody<LoginInputModel>, res: Response) => {
+        console.log(`[authController]/GET:auth/me started`);
         const userId = req.user!.id;
         console.log(`[authController]:get user info by ID: ${userId}`);
         const userInDb = await usersService.getUserById(userId);
@@ -75,9 +76,9 @@ authRouter.post('/registration',
     });
 
 authRouter.post('/registration-confirmation',
+    accessAttemptCounter,
     validateRegistrationConfirmationCodeModel(),
     validateResult,
-    accessAttemptCounter,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/registration-confirmation run`);
         console.log(req.body);
@@ -93,14 +94,14 @@ authRouter.post('/registration-confirmation',
 
 
 authRouter.post('/registration-email-resending',
+    accessAttemptCounter,
     validateRegistrationEmailResendingModel(),
     validateResult,
-    accessAttemptCounter,
     async (req: RequestWithBody<RegistrationEmailResendingModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration-email-resending run`);
         const {email} = req.body;
         try {
-            const user = await usersService.findUserByEmailOrPassword(email);
+            const user = await usersService.findUserByEmailOrLogin(email);
             const result = await authService.resendingEmail(user!.id);
             if (!result) return res.status(400).send(
                 {"errorsMessages": [{"message": "cant\'t send email", "field": "email"}]}
@@ -134,7 +135,7 @@ authRouter.post('/logout',
     refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/logout run`);
-        const inputRefreshToken = req.cookies.refreshToken;
+        const inputRefreshToken = req.cookies.RefreshToken;
         try {
             const result = await authService.userLogout(inputRefreshToken);
             if (!result) return res.sendStatus(500);
