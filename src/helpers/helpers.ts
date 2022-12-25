@@ -7,6 +7,7 @@ import {v4 as uuidv4} from "uuid";
 import add from "date-fns/add";
 import * as dotenv from "dotenv";
 import hash from "hash.js";
+import {CONFIRM_EMAIL_LIFE_PERIOD, COOKIE_LIFE_PERIOD} from '../utils/settings-const';
 
 dotenv.config();
 
@@ -41,25 +42,28 @@ export const parseUserViewModel = (user: UserInDbEntity): UserViewModelDto => {
 
 export const getConfirmationCode = () => uuidv4();
 
-export const getExpirationDate = () => add(new Date(),
-    {
-        hours: 0,
-        minutes: 10
-    });
-export const getCookieRefreshTokenExpire = () => add(new Date(), {seconds: 18});
+export const getConfirmationEmailExpirationDate = () => add(
+    new Date(),
+    {[CONFIRM_EMAIL_LIFE_PERIOD.units]: CONFIRM_EMAIL_LIFE_PERIOD.amount}
+);
+
+export const getCookieRefreshTokenExpire = () => add(
+    new Date(),
+    {[COOKIE_LIFE_PERIOD.units]: COOKIE_LIFE_PERIOD.amount}
+);
 
 export const setRefreshTokenToCookie = (res: Response, refreshToken: string) => {
     res.cookie(
-        'refreshToken',
+        'RefreshToken',
         refreshToken,
-        {expires: getCookieRefreshTokenExpire(),  httpOnly: true} //secure: true,
+        {expires: getCookieRefreshTokenExpire(), httpOnly: true} //secure: true,
     );
 };
 
-
 export const getDeviceInfo = (req: Request): { ip: string, title: string } => {
-    const ipInHeaders = req.headers['x-forwarded-for'];
+    const ipInHeaders = req.headers['x-forwarded-for'] || req.headers['X-Forwarded-For'];
     const ip = Array.isArray(ipInHeaders) ? ipInHeaders[0] : (ipInHeaders || '00:00:0000');
-    const title = req.headers['user-agent'] || 'no name';
+    const titleInHeader = req.headers['User-Agent'] || req.headers['user-agent'] || 'no name';
+    const title = Array.isArray(titleInHeader) ? titleInHeader[0] : titleInHeader;
     return {ip, title};
 };
