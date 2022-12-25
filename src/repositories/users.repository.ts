@@ -25,7 +25,7 @@ const parseUserInDbEntity = (result: WithId<UserEntity>): UserInDbEntity => {
 };
 
 export const usersRepository: UsersRepositoryInterface = {
-    async findUserByEmailOrPassword(loginOrEmail: string): Promise<UserInDbEntity | null> {
+    async findUserByEmailOrLogin(loginOrEmail: string): Promise<UserInDbEntity | null> {
         console.log(`[findUserByEmailOrPassword]: loginOrEmail:${loginOrEmail}`);
         const result = await usersCollection.findOne({$or: [{'accountData.email': loginOrEmail}, {'accountData.login': loginOrEmail}]});
         if (!result) return null;
