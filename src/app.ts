@@ -7,6 +7,7 @@ import {authRouter} from "./controllers/auth.controller";
 import {usersRouter} from "./controllers/users.controller";
 import {commentsRouter} from "./controllers/comments.controller";
 import cors from 'cors'
+import {securityRouter} from './controllers/security.controller';
 
 export const app = express();
 app.set('trust proxy', true)
@@ -19,4 +20,6 @@ app.use('/testing', testingRouter)
 app.use('/auth', authRouter)
 app.use('/users', usersRouter)
 app.use('/comments', commentsRouter)
+app.use('/security', securityRouter)
+
 
