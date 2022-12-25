@@ -3,32 +3,35 @@ import jwt from 'jsonwebtoken';
 import {
     UserInfoInRefreshToken
 } from "../controllers/interfaces/user-info-in-refresh-token.interface";
+import {ACCESS_TOKEN_LIFE_PERIOD, REFRESH_TOKEN_LIFE_PERIOD} from './settings-const';
 
 dotenv.config();
 
 const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || '11';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '22';
 
-const expiresIn_Access = '110s';
-const expiresIn_Refresh = '120s';
 
 export type TypeJWT = 'access' | 'refresh'
 
 
 export const jwtService = {
     async createAccessJWT(userId: string) {
+        const expiresIn = ACCESS_TOKEN_LIFE_PERIOD.amount + ACCESS_TOKEN_LIFE_PERIOD.units[0]
+        console.log('[jwtService]expiresIn accessToken:' + expiresIn);
         return jwt.sign(
             {userId},
             JWT_ACCESS_SECRET,
-            {expiresIn: expiresIn_Access}
+            {expiresIn}
         );
     },
 
-    async createRefreshJWT(userId: string, deviceId: string, lastActiveDate: string) {
+    async createRefreshJWT(userId: string, deviceId: string, lastActiveDate: string, ) {
+        const expiresIn = REFRESH_TOKEN_LIFE_PERIOD.amount + REFRESH_TOKEN_LIFE_PERIOD.units[0]
+        console.log('[jwtService]expiresIn refreshToken:' + expiresIn);
         return jwt.sign(
             {userId, deviceId, lastActiveDate},
             JWT_REFRESH_SECRET,
-            {expiresIn: expiresIn_Refresh}
+            {expiresIn}
         );
     },
 
