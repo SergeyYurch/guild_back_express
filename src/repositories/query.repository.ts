@@ -27,7 +27,7 @@ export const queryRepository: QueryRepositoryInterface = {
         userId: string,
         paginatorOption: PaginatorOptionInterface
     ): Promise<PaginatorDto<CommentViewModelDto>> => {
-        // console.log(`[findUserByEmailOrPassword]: loginOrEmail:${loginOrEmail}`);
+        // console.log(`[findUserByEmailOrLogin]: loginOrEmail:${loginOrEmail}`);
         const {sortBy, sortDirection, pageSize, pageNumber} = paginatorOption;
         const totalCount = await commentsCollection.count({userId});
         const result = await commentsCollection.find({userId})
