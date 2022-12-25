@@ -54,7 +54,7 @@ export const getCookieRefreshTokenExpire = () => add(
 
 export const setRefreshTokenToCookie = (res: Response, refreshToken: string) => {
     res.cookie(
-        'RefreshToken',
+        'refreshToken',
         refreshToken,
         {expires: getCookieRefreshTokenExpire(), secure: true,httpOnly: true} //secure: true,
     );

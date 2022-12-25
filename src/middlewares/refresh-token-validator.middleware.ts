@@ -7,7 +7,7 @@ import {authService} from "../services/auth.service";
 export const refreshTokenValidator = async (req: Request, res: Response, next: NextFunction) => {
     console.log('[refreshTokenValidator]');
     console.log(req.cookies );
-    const refreshToken = req.cookies?.RefreshToken;
+    const refreshToken = req.cookies?.refreshToken;
     console.log(`[refreshTokenValidator] refreshToken: ${refreshToken}`);
 
     try {

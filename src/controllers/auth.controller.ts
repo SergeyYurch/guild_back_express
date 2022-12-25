@@ -135,7 +135,7 @@ authRouter.post('/logout',
     refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/logout run`);
-        const inputRefreshToken = req.cookies.RefreshToken;
+        const inputRefreshToken = req.cookies.refreshToken;
         try {
             const result = await authService.userLogout(inputRefreshToken);
             if (!result) return res.sendStatus(500);

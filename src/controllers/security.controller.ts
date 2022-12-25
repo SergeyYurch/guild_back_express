@@ -13,7 +13,7 @@ securityRouter.get('/devices',
     refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`!!!![securityRouter]:GET /devices`);
-        const refreshToken = req.cookies.RefreshToken;
+        const refreshToken = req.cookies.refreshToken;
 
         try {
             const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
@@ -30,7 +30,7 @@ securityRouter.delete('/devices',
     async (req: Request, res: Response) => {
         console.log(`!!!![securityRouter]:GET /devices`);
         try {
-            const result = await authService.deleteAllSessionExcludeCurrent(req.cookies.RefreshToken);
+            const result = await authService.deleteAllSessionExcludeCurrent(req.cookies.refreshToken);
             if (result) return res.sendStatus(204);
             return res.sendStatus(500);
         } catch (error) {
@@ -44,7 +44,7 @@ securityRouter.delete('/devices/:deviceId',
     async (req: RequestWithId, res: Response) => {
         console.log(`!!!![securityRouter]:DELETE/devices/deviceId`);
         try {
-            const refreshToken = req.cookies.RefreshToken;
+            const refreshToken = req.cookies.refreshToken;
             const deviceId = req.params.deviceId;
             if (!ObjectId.isValid(deviceId)) return res.sendStatus(404);
             const authSession = await authService.getAuthSessionById(deviceId);

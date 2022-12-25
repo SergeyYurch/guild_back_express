@@ -214,7 +214,7 @@ describe('HOST/auth/login :login user and receiving token, getting info about us
             .expect(200);
 
         const cookies = result.get('Set-Cookie');
-        const refreshToken = cookies[0].split(';').find(c => c.includes('RefreshToken'))?.split('=')[1] || 'no token';
+        const refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
         const userIdFromRefreshToken = await jwtService.getUserIdByJwtToken(refreshToken, 'refresh');
         expect(userIdFromRefreshToken).toBe(user1Id);
 
@@ -245,20 +245,7 @@ describe('HOST/auth/login :login user and receiving token, getting info about us
                 "password": "password1"
             })
             .expect(200);
-        await request(app)
-            .post('/auth/login')
-            .send({
-                "loginOrEmail": "user1",
-                "password": "password1"
-            })
-            .expect(200);
-        await request(app)
-            .post('/auth/login')
-            .send({
-                "loginOrEmail": "user1",
-                "password": "password1"
-            })
-            .expect(200);
+
         await request(app)
             .post('/auth/login')
             .send({
@@ -300,7 +287,7 @@ describe('HOST/auth/refresh-token ', () => {
             });
 
         const cookies = loginResult.get('Set-Cookie');
-        refreshToken = cookies[0].split(';').find(c => c.includes('RefreshToken'))?.split('=')[1] || 'no token';
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
         user1Id = newUser1.body.id;
         const sessionInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
         expiredRefreshToken = await jwtService.createRefreshJWT(user1Id, sessionInfo!.deviceId, String(sub(new Date(), {days:2} )));
@@ -319,7 +306,7 @@ describe('HOST/auth/refresh-token ', () => {
     it('should return code 401 no refreshToken', async () => {
         await request(app)
             .post('/auth/refresh-token')
-            .set('Cookie', `RefreshToken=${expiredRefreshToken}`)
+            .set('Cookie', `refreshToken=${expiredRefreshToken}`)
             .set('X-Forwarded-For', `1.2.3.4`)
             .set('User-Agent', `android`)
             .expect(401);
@@ -328,13 +315,13 @@ describe('HOST/auth/refresh-token ', () => {
     it('should return code 200 and pair of JWT-tokens', async () => {
         const result = await request(app)
             .post('/auth/refresh-token')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .set('X-Forwarded-For', `1.2.3.4`)
             .set('User-Agent', `android`)
             .expect(200);
 
         const cookies = result.get('Set-Cookie');
-        refreshToken = cookies[0].split(';').find(c => c.includes('RefreshToken'))?.split('=')[1] || 'no token';
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
          const userIdFromRefreshToken = await jwtService.getUserIdByJwtToken(refreshToken, 'refresh');
          expect(userIdFromRefreshToken).toBe(user1Id);
 
@@ -347,27 +334,27 @@ describe('HOST/auth/refresh-token ', () => {
 
         let loginResult = await request(app)
             .post('/auth/refresh-token')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .set('X-Forwarded-For', `1.2.3.4`)
             .set('User-Agent', `android`)
             .expect(200);
 
         let cookies = loginResult.get('Set-Cookie');
-        refreshToken = cookies[0].split(';').find(c => c.includes('RefreshToken'))?.split('=')[1] || 'no token';
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
 
         loginResult = await request(app)
             .post('/auth/refresh-token')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .set('X-Forwarded-For', `1.2.3.4`)
             .set('User-Agent', `android`)
             .expect(200);
 
         cookies = loginResult.get('Set-Cookie');
-        refreshToken = cookies[0].split(';').find(c => c.includes('RefreshToken'))?.split('=')[1] || 'no token';
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
 
         loginResult = await request(app)
             .post('/auth/refresh-token')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .set('X-Forwarded-For', `1.2.3.4`)
             .set('User-Agent', `android`)
             .expect(429);
@@ -446,11 +433,11 @@ describe('HOST/auth/registration-confirmation ', () => {
 
         await request(app)
             .post('/auth/registration-confirmation')
-            .set('Cookie', `RefreshToken=${refreshToken}`);
+            .set('Cookie', `refreshToken=${refreshToken}`);
 
         await request(app)
             .post('/auth/registration-confirmation')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .expect(429);
     });
 });
@@ -556,7 +543,7 @@ describe('HOST/auth/logout', () => {
             });
 
         const cookies = loginResult.get('Set-Cookie');
-        refreshToken = cookies[0].split(';').find(c => c.includes('RefreshToken'))?.split('=')[1] || 'no token';
+        refreshToken = cookies[0].split(';').find(c => c.includes('refreshToken'))?.split('=')[1] || 'no token';
         user1Id = newUser1.body.id;
         const sessionInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
         expiredRefreshToken = await jwtService.createRefreshJWT(user1Id, sessionInfo!.deviceId, String(new Date().getTime() - 10000));
@@ -565,19 +552,19 @@ describe('HOST/auth/logout', () => {
 
     it('should return code 401 no refreshToken', async () => {
         await request(app)
-            .post('/auth/refresh-token')
+            .post('/auth/logout')
             .expect(401);
     });
 
     it('should return code 204 and logout and return code 401 if user send correct refreshToken after logout', async () => {
         const result = await request(app)
             .post('/auth/logout')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .expect(204);
 
         await request(app)
             .post('/auth/logout')
-            .set('Cookie', `RefreshToken=${refreshToken}`)
+            .set('Cookie', `refreshToken=${refreshToken}`)
             .expect(401);
 
     });
