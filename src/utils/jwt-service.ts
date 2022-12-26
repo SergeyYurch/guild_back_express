@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import {
     UserInfoInRefreshToken
 } from "../controllers/interfaces/user-info-in-refresh-token.interface";
-import {ACCESS_TOKEN_LIFE_PERIOD, REFRESH_TOKEN_LIFE_PERIOD} from './settings-const';
+import {ACCESS_TOKEN_LIFE_PERIOD, REFRESH_TOKEN_LIFE_PERIOD} from '../settings-const';
 
 dotenv.config();
 
