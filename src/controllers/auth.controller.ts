@@ -11,7 +11,6 @@ import {getDeviceInfo, setRefreshTokenToCookie} from "../helpers/helpers";
 import {
     refreshTokenValidator
 } from "../middlewares/refresh-token-validator.middleware";
-import {jwtService} from "../utils/jwt-service";
 import {accessAttemptCounter} from "../middlewares/access-attempt-counter.middleware";
 
 export const authRouter = Router();
@@ -30,33 +29,40 @@ authRouter.post('/login',
     validateResult,
     accessAttemptCounter,
     async (req: RequestWithBody<LoginInputModel>, res: Response) => {
-        const {loginOrEmail, password} = req.body;
-        console.log(`!!!![authRouter] login:${loginOrEmail}`);
-        const user = await authService.checkCredentials({loginOrEmail, password});
-        if (!user) return res.sendStatus(401);
-        const {ip, title} = getDeviceInfo(req);
-        const loginParams = await authService.userLogin(user.id, ip, title);
-        if (!loginParams) return res.sendStatus(500);
-        setRefreshTokenToCookie(res, loginParams.refreshToken);
-        return res.status(200).send({
-            "accessToken": loginParams.accessToken
-        });
+        try {
+            const {loginOrEmail, password} = req.body;
+            console.log(`!!!![authRouter] login:${loginOrEmail}`);
+            const user = await authService.checkCredentials({loginOrEmail, password});
+            if (!user) return res.sendStatus(401);
+            const {ip, title} = getDeviceInfo(req);
+            const loginParams = await authService.userLogin(user.id, ip, title);
+            if (!loginParams) return res.sendStatus(500);
+            setRefreshTokenToCookie(res, loginParams.refreshToken);
+            return res.status(200)
+                .send({"accessToken": loginParams.accessToken});
+        } catch (error) {
+            return res.sendStatus(500);
+        }
     }
 );
 
 authRouter.get('/me',
     authBearerMiddleware,
     async (req: RequestWithBody<LoginInputModel>, res: Response) => {
-        console.log(`[authController]/GET:auth/me started`);
-        const userId = req.user!.id;
-        console.log(`[authController]:get user info by ID: ${userId}`);
-        const userInDb = await usersService.getUserById(userId);
-        if (!userInDb) return res.sendStatus(401);
-        return res.status(200).send({
-            email: userInDb.email,
-            login: userInDb.login,
-            userId
-        });
+        try {
+            console.log(`[authController]/GET:auth/me started`);
+            const userId = req.user!.id;
+            console.log(`[authController]:get user info by ID: ${userId}`);
+            const userInDb = await usersService.getUserById(userId);
+            if (!userInDb) return res.sendStatus(401);
+            return res.status(200).send({
+                email: userInDb.email,
+                login: userInDb.login,
+                userId
+            });
+        } catch (error) {
+            return res.sendStatus(500);
+        }
     });
 
 authRouter.post('/registration',
@@ -65,14 +71,17 @@ authRouter.post('/registration',
     accessAttemptCounter,
     async (req: RequestWithBody<UserInputModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration run`);
-        const {login, password, email} = req.body;
         try {
-            const newUser = await usersService.createNewUser(login, email, password);
-            if (newUser) return res.sendStatus(204);
+            const {login, password, email} = req.body;
+            try {
+                const newUser = await usersService.createNewUser(login, email, password);
+                if (newUser) return res.sendStatus(204);
+            } catch (error) {
+                return res.sendStatus(500);
+            }
         } catch (error) {
             return res.sendStatus(500);
         }
-
     });
 
 authRouter.post('/registration-confirmation',
@@ -81,12 +90,15 @@ authRouter.post('/registration-confirmation',
     validateResult,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/registration-confirmation run`);
-        console.log(req.body);
-        const code = String(req.body.code);
         try {
-            const result = await authService.confirmEmail(code);
-            if (!result) res.sendStatus(400);
-            return res.sendStatus(204);
+            const code = String(req.body.code);
+            try {
+                const result = await authService.confirmEmail(code);
+                if (!result) res.sendStatus(400);
+                return res.sendStatus(204);
+            } catch (error) {
+                return res.sendStatus(500);
+            }
         } catch (error) {
             return res.sendStatus(500);
         }
@@ -99,8 +111,8 @@ authRouter.post('/registration-email-resending',
     validateResult,
     async (req: RequestWithBody<RegistrationEmailResendingModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration-email-resending run`);
-        const {email} = req.body;
         try {
+            const {email} = req.body;
             const user = await usersService.findUserByEmailOrLogin(email);
             const result = await authService.resendingEmail(user!.id);
             if (!result) return res.status(400).send(
@@ -135,8 +147,8 @@ authRouter.post('/logout',
     refreshTokenValidator,
     async (req: Request, res: Response) => {
         console.log(`[authController]:POST/logout run`);
-        const inputRefreshToken = req.cookies.refreshToken;
         try {
+            const inputRefreshToken = req.cookies.refreshToken;
             const result = await authService.userLogout(inputRefreshToken);
             if (!result) return res.sendStatus(500);
             res.clearCookie('refreshToken');

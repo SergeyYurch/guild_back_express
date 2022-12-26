@@ -10,6 +10,9 @@ import {
 import {emailManager} from "../managers/emailManager";
 
 export const usersService = {
+    test (){
+        console.log('!!!!!!!!!!!!!!!!!!!!!!!!test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    },
     async deleteUserById(id: string): Promise<boolean> {
         return await usersRepository.deleteUserById(id);
     },
@@ -24,6 +27,7 @@ export const usersService = {
         return parseUserViewModel(result);
     },
     async createNewUser(login: string, email: string, password: string, confirmed?: boolean): Promise<UserViewModelDto | null> {
+        console.log(this);
         console.log(`[usersService]: createNewUser ${login}`);
         const createdAt = new Date();
         const passwordSalt = await generateHashSalt();
