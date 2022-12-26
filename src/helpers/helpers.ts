@@ -7,7 +7,7 @@ import {v4 as uuidv4} from "uuid";
 import add from "date-fns/add";
 import * as dotenv from "dotenv";
 import hash from "hash.js";
-import {CONFIRM_EMAIL_LIFE_PERIOD, COOKIE_LIFE_PERIOD} from '../utils/settings-const';
+import {CONFIRM_EMAIL_LIFE_PERIOD, COOKIE_LIFE_PERIOD} from '../settings-const';
 
 dotenv.config();
 
@@ -56,14 +56,18 @@ export const setRefreshTokenToCookie = (res: Response, refreshToken: string) => 
     res.cookie(
         'refreshToken',
         refreshToken,
-        {expires: getCookieRefreshTokenExpire(), secure: true,httpOnly: true} //secure: true,
+        {
+            expires: getCookieRefreshTokenExpire(),
+            secure: true,
+            httpOnly: true
+        }
     );
 };
 
 export const getDeviceInfo = (req: Request): { ip: string, title: string } => {
-    const ipInHeaders = req.headers['x-forwarded-for'] || req.headers['X-Forwarded-For'];
-    const ip = Array.isArray(ipInHeaders) ? ipInHeaders[0] : (ipInHeaders || '00:00:0000');
-    const titleInHeader = req.headers['User-Agent'] || req.headers['user-agent'] || 'no name';
+    const ipInHeaders = req.headers['X-Forwarded-For'];
+    const ip = Array.isArray(ipInHeaders) ? ipInHeaders[0] : (ipInHeaders || '00:00:00:00');
+    const titleInHeader = req.headers['User-Agent']  || 'no name';
     const title = Array.isArray(titleInHeader) ? titleInHeader[0] : titleInHeader;
     return {ip, title};
 };
