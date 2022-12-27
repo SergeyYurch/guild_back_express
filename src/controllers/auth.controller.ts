@@ -36,7 +36,7 @@ authRouter.post('/login',
             if (!user) return res.sendStatus(401);
             const {ip, title} = getDeviceInfo(req);
             const loginParams = await authService.userLogin(user.id, ip, title);
-            if (!loginParams) return res.sendStatus(500);
+            if (!loginParams) return res.sendStatus(503);
             setRefreshTokenToCookie(res, loginParams.refreshToken);
             return res.status(200)
                 .send({"accessToken": loginParams.accessToken});
