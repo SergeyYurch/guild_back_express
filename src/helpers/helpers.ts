@@ -67,7 +67,9 @@ export const setRefreshTokenToCookie = (res: Response, refreshToken: string) => 
 export const getDeviceInfo = (req: Request): { ip: string, title: string } => {
 
     const ip = req.get('X-Forwarded-For')|| '00:00:00:00'
+    console.log(`[helpers]/getDeviceInfo  ip: ${ip}`);
     const title = req.get('User-Agent')|| 'no name'
+    console.log(`[helpers]/getDeviceInfo  title: ${title}`);
 
     // const ipInHeaders = req.headers['X-Forwarded-For'];
     // const ip = Array.isArray(ipInHeaders) ? ipInHeaders[0] : (ipInHeaders || '00:00:00:00');
