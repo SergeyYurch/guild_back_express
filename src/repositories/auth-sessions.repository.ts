@@ -7,16 +7,16 @@ import {AuthSessionInDb} from "./entitiesRepository/auth-session-in-db.interface
 export const authSessionsRepository = {
     async cleanAuthSessionsCollection  ():Promise<void> {
         console.log(`[authSessionsRepository]/cleanAuthSessionsCollection `);
-        await deviceAuthSessionsCollection.deleteMany({
-            expiresDate: {$lt: new Date()}
-        });
+        // await deviceAuthSessionsCollection.deleteMany({
+        //     expiresDate: {$lt: new Date()}
+        // });
     },
     async saveDeviceAuthSession(session: AuthSessionEntity): Promise<string | null> {
         await this.cleanAuthSessionsCollection();
         //сохраняем сессию в базу и возвращаем true если операция была успешна
         console.log(`[deviceAuthSessionsRepository]:saveDeviceAuthSession`);
-        // const result = await deviceAuthSessionsCollection.insertOne(session);
-        // if (result.acknowledged) return result.insertedId.toString();
+        const result = await deviceAuthSessionsCollection.insertOne(session);
+        if (result.acknowledged) return result.insertedId.toString();
         return null;
     },
     async getDeviceAuthSessionById(deviceId: string): Promise<AuthSessionInDb | null> {
