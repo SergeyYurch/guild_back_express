@@ -86,23 +86,23 @@ export const authService = {
         return authSessionsRepository.deleteSessionById(userInfo.deviceId);
     },
     async checkDeviceSession(ip: string, title: string, refreshToken: string): Promise<{status:string, message:string}> {
-        const userInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
-        if (!userInfoFromToken) return {status: 'error', message: 'userInfoFromToken is wrong'};
-        console.log(`[checkDeviceSession]: InToken/deviceId:${userInfoFromToken.deviceId}`);
-        const sessionInDb = await authSessionsRepository.getDeviceAuthSessionById(userInfoFromToken.deviceId);
+        const sessionInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
+        if (!sessionInfoFromToken) return {status: 'error', message: 'sessionInfoFromToken is wrong'};
+        console.log(`[checkDeviceSession]: InToken/deviceId:${sessionInfoFromToken.deviceId}`);
+        const sessionInDb = await authSessionsRepository.getDeviceAuthSessionById(sessionInfoFromToken.deviceId);
         if (!sessionInDb) return {status: 'error', message: 'sessionInDb not find'};
         console.log(`[checkDeviceSession]: Input/ip:${ip}`);
         console.log(`[checkDeviceSession]: InDb/ip:${sessionInDb?.ip}`);
         console.log(`[checkDeviceSession]: Input/title:${title}`);
         console.log(`[checkDeviceSession]: InDb/title:${sessionInDb.title}`);
-        console.log(`[checkDeviceSession]: InToken/lastActiveDate:${userInfoFromToken.lastActiveDate}`);
+        console.log(`[checkDeviceSession]: InToken/lastActiveDate:${sessionInfoFromToken.lastActiveDate}`);
         console.log(`[checkDeviceSession]: InDb/lastActiveDate:${sessionInDb.lastActiveDate}`);
-        console.log(`[checkDeviceSession]: InToken/userId:${userInfoFromToken.userId}`);
+        console.log(`[checkDeviceSession]: InToken/userId:${sessionInfoFromToken.userId}`);
         console.log(`[checkDeviceSession]: InDb/userId:${sessionInDb.userId}`);
-        const lastActiveDateFromToken =  new Date(userInfoFromToken.lastActiveDate)
-        if (sessionInDb.title !== title) return {status: 'error', message: 'title is wrong'}
+        const lastActiveDateFromToken =  new Date(sessionInfoFromToken.lastActiveDate)
+        if (sessionInDb.title !== title) return {status: 'error', message: `title is wrong, title in DB: ${sessionInDb.title}, current session title: ${title}`}
         if (sessionInDb.lastActiveDate > lastActiveDateFromToken) return {status: 'error', message: 'lastActiveDate is wrong'}
-        if (sessionInDb.userId !== userInfoFromToken.userId) return {status: 'error', message: 'userId is wrong'}
+        if (sessionInDb.userId !== sessionInfoFromToken.userId) return {status: 'error', message: 'userId is wrong'}
 
         return  {status: 'ok', message: sessionInDb.userId};
     },
