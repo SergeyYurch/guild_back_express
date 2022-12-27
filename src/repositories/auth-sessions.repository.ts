@@ -15,8 +15,8 @@ export const authSessionsRepository = {
         await this.cleanAuthSessionsCollection();
         //сохраняем сессию в базу и возвращаем true если операция была успешна
         console.log(`[deviceAuthSessionsRepository]:saveDeviceAuthSession`);
-        const result = await deviceAuthSessionsCollection.insertOne(session);
-        if (result.acknowledged) return result.insertedId.toString();
+        // const result = await deviceAuthSessionsCollection.insertOne(session);
+        // if (result.acknowledged) return result.insertedId.toString();
         return null;
     },
     async getDeviceAuthSessionById(deviceId: string): Promise<AuthSessionInDb | null> {
