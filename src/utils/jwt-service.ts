@@ -25,7 +25,7 @@ export const jwtService = {
         );
     },
 
-    async createRefreshJWT(userId: string, deviceId: string, lastActiveDate: string, ) {
+    async createRefreshJWT(userId: string, deviceId: string, lastActiveDate: Date, ) {
         const expiresIn = REFRESH_TOKEN_LIFE_PERIOD.amount + REFRESH_TOKEN_LIFE_PERIOD.units[0]
         console.log('[jwtService]expiresIn refreshToken:' + expiresIn);
         return jwt.sign(
