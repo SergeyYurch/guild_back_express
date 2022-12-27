@@ -19,21 +19,6 @@ export const authSessionsRepository = {
         if (result.acknowledged) return result.insertedId.toString();
         return null;
     },
-    async findDeviceAuthSession(deviceId: string): Promise<AuthSessionInDb | null> {
-        console.log(`[deviceAuthSessionsRepository]: findDeviceAuthSession deviceId:${deviceId}`);
-        await this.cleanAuthSessionsCollection();
-        const result = await deviceAuthSessionsCollection.findOne({
-            _id: new ObjectId(deviceId),
-        });
-        if (!result) return null;
-        return ({
-            ip: result.ip,
-            title: result.title,
-            lastActiveDate: result.lastActiveDate,
-            deviceId: result._id.toString(),
-            userId: result.userId
-        });
-    },
     async getDeviceAuthSessionById(deviceId: string): Promise<AuthSessionInDb | null> {
         console.log(`[deviceAuthSessionsRepository]: getDeviceAuthSessionById:${deviceId}`);
         await this.cleanAuthSessionsCollection();
@@ -74,11 +59,11 @@ export const authSessionsRepository = {
         console.log(`[deviceAuthSessionsRepository]: deleteSessionExcludeById result: ${result.acknowledged}`);
         return result.acknowledged;
     },
-    async checkPreviousUserSessionFromThisDevice(userId:string, ip: string, title: string): Promise<string | null> {
+    async getPreviousUserSessionFromThisDevice(userId:string, title: string): Promise<string | null> {
         console.log(`[deviceAuthSessionsRepository]: checkPreviousUserSessionFromThisDevice`);
         await this.cleanAuthSessionsCollection();
         const result = await deviceAuthSessionsCollection.findOne({
-            $and: [{userId}, {ip}, {title}]
+            userId, title
         });
         console.log(`[deviceAuthSessionsRepository]: checkPreviousUserSessionFromThisDevice result: ${result?._id.toString()}`);
         return result?._id.toString() || null;
