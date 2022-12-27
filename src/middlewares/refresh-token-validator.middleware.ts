@@ -15,10 +15,10 @@ export const refreshTokenValidator = async (req: Request, res: Response, next: N
         const {ip, title} = getDeviceInfo(req);
         console.log(`[refreshTokenValidator]: ip : ${ip}`);
         console.log(`[refreshTokenValidator]: title : ${title}`);
-        const userId = await authService.checkDeviceSession(ip, title, refreshToken);
-        console.log(`[refreshTokenValidator]: userId : ${userId}`);
-        if (!userId) return res.status(402).send(`no checkDeviceSession refreshToken:${refreshToken}`);
-        req.user= await usersService.getUserById(userId)
+        const result = await authService.checkDeviceSession(ip, title, refreshToken);
+        console.log(`[refreshTokenValidator]: userId : ${result}`);
+        if (result.status!=='ok') return res.status(402).send(`no checkDeviceSession error:${result.message}`);
+        req.user= await usersService.getUserById(result.message)
         return next();
     } catch (error) {
         return res.sendStatus(500);
