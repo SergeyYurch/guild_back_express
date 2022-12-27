@@ -66,9 +66,9 @@ authRouter.get('/me',
     });
 
 authRouter.post('/registration',
+    accessAttemptCounter,
     validateUserInputModel(),
     validateResult,
-    accessAttemptCounter,
     async (req: RequestWithBody<UserInputModelDto>, res: Response) => {
         console.log(`[authController]:POST/registration run`);
         try {
