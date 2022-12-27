@@ -1,10 +1,11 @@
 import {Request, Response, NextFunction} from 'express';
 import {accessAttemptRepository} from "../repositories/access-attempt.repository";
+import {getDeviceInfo} from '../helpers/helpers';
 
 export const accessAttemptCounter = async (req: Request, res: Response, next: NextFunction) => {
     const endpoint = req.originalUrl;
-    const ipInHeaders = req.headers['x-forwarded-for'];
-    const ip = Array.isArray(ipInHeaders) ? ipInHeaders[0] : (ipInHeaders || '00:00:0000');
+    const deviceInfo =getDeviceInfo(req)
+    const ip = deviceInfo.ip;
     console.log(`[accessAttemptCounter]-middleware run by ip: ${ip}, for url: ${endpoint}`);
     const attemptsCount = await accessAttemptRepository.getNumberOfAttemptsByIp(ip, endpoint);
     if (attemptsCount > 4) {
