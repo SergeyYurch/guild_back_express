@@ -122,15 +122,6 @@ describe('HOST/auth/registration :login user and receiving token, getting info a
         await request(app)
             .post('/auth/registration')
             .send({
-                "login": "user4",
-                "password": "string4",
-                "email": "user4@mail.ru"
-            })
-            .expect(204);
-
-        await request(app)
-            .post('/auth/registration')
-            .send({
                 "login": "user6",
                 "password": "string6",
                 "email": "user6@mail.ru"
