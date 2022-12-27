@@ -100,7 +100,7 @@ export const authService = {
         console.log(`[checkDeviceSession]: InToken/userId:${sessionInfoFromToken.userId}`);
         console.log(`[checkDeviceSession]: InDb/userId:${sessionInDb.userId}`);
         const lastActiveDateFromToken =  new Date(sessionInfoFromToken.lastActiveDate)
-        if (sessionInDb.title !== title) return {status: 'error', message: `title is wrong, title in DB: ${sessionInDb.title}, current session title: ${title}`}
+        if (sessionInDb.title !== title) return {status: 'error', message: `title is wrong,  in DB: (title:${sessionInDb.title}, lastActiveDate:${sessionInDb.lastActiveDate}), current session title: ${title}, lastActiveDate:${sessionInfoFromToken.userId}`}
         if (sessionInDb.lastActiveDate > lastActiveDateFromToken) return {status: 'error', message: 'lastActiveDate is wrong'}
         if (sessionInDb.userId !== sessionInfoFromToken.userId) return {status: 'error', message: 'userId is wrong'}
 
