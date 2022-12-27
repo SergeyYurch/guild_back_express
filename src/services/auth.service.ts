@@ -85,12 +85,12 @@ export const authService = {
         if (!userInfo) return false;
         return authSessionsRepository.deleteSessionById(userInfo.deviceId);
     },
-    async checkDeviceSession(ip: string, title: string, refreshToken: string): Promise<string | null> {
+    async checkDeviceSession(ip: string, title: string, refreshToken: string): Promise<{status:string, message:string}> {
         const userInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
-        if (!userInfoFromToken) return null;
+        if (!userInfoFromToken) return {status: 'error', message: 'userInfoFromToken is wrong'};
         console.log(`[checkDeviceSession]: InToken/deviceId:${userInfoFromToken.deviceId}`);
         const sessionInDb = await authSessionsRepository.getDeviceAuthSessionById(userInfoFromToken.deviceId);
-        if (!sessionInDb) return null;
+        if (!sessionInDb) return {status: 'error', message: 'sessionInDb not find'};
         console.log(`[checkDeviceSession]: Input/ip:${ip}`);
         console.log(`[checkDeviceSession]: InDb/ip:${sessionInDb?.ip}`);
         console.log(`[checkDeviceSession]: Input/title:${title}`);
@@ -100,10 +100,11 @@ export const authService = {
         console.log(`[checkDeviceSession]: InToken/userId:${userInfoFromToken.userId}`);
         console.log(`[checkDeviceSession]: InDb/userId:${sessionInDb.userId}`);
         const lastActiveDateFromToken =  new Date(userInfoFromToken.lastActiveDate)
-        if (sessionInDb.title !== title
-            || sessionInDb.lastActiveDate > lastActiveDateFromToken
-            || sessionInDb.userId !== userInfoFromToken.userId) return null;
-        return userInfoFromToken.userId;
+        if (sessionInDb.title !== title) return {status: 'error', message: 'title is wrong'}
+        if (sessionInDb.lastActiveDate > lastActiveDateFromToken) return {status: 'error', message: 'lastActiveDate is wrong'}
+        if (sessionInDb.userId !== userInfoFromToken.userId) return {status: 'error', message: 'userId is wrong'}
+
+        return  {status: 'ok', message: sessionInDb.userId};
     },
     async getAllSessionByUserId(userId: string): Promise<DeviceSessionViewModelDto[]> {
         const sessions = await authSessionsRepository.getAllSessionByUserId(userId);
