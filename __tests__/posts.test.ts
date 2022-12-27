@@ -423,7 +423,7 @@ describe('POST: /posts/{postId}/comments create new comment for post', () => {
     let blogId = '';
     let userId = '';
     let postId = '';
-    let token = '';
+    let accessToken = '';
     let token_ = '';
     beforeAll(async () => {
         await request(app)
@@ -467,7 +467,7 @@ describe('POST: /posts/{postId}/comments create new comment for post', () => {
 
         userId = newUser1.body.id;
         postId = newPost.body.id;
-        token = await jwtService.createJWT(userId);
+        accessToken = auth.body.accessToken
         token_ = auth.body.accessToken
     });
     it('should return code 401 "Unauthorized" for unauthorized request', async () => {
@@ -484,7 +484,7 @@ describe('POST: /posts/{postId}/comments create new comment for post', () => {
     it('should return code 400  If the inputModel has incorrect values', async () => {
         await request(app)
             .post(`/posts/${postId}/comments`)
-            .auth(token, {type: "bearer"})
+            .auth(accessToken, {type: "bearer"})
             .send({
                 content: 'content1',
             })
@@ -495,7 +495,7 @@ describe('POST: /posts/{postId}/comments create new comment for post', () => {
 
         await request(app)
             .post(`/posts/11111111111111/comments`)
-            .auth(token, {type: "bearer"})
+            .auth(accessToken, {type: "bearer"})
             .send({
                 content: 'comment1comment1comment1'
             })
@@ -505,13 +505,13 @@ describe('POST: /posts/{postId}/comments create new comment for post', () => {
     it('should return code 201 and newly created post', async () => {
         const comment = await request(app)
             .post(`/posts/${userId}/comments`)
-            .auth(token, {type: 'bearer'})
+            .auth(accessToken, {type: 'bearer'})
             .send({
-                content: 'comment 1 comment 1',
+                content: 'comment 1 comment 1 comment 1',
             });
         expect(comment.body).toEqual({
             id: expect.any(String),
-            content: "comment 1 comment 1",
+            content: "comment 1 comment 1 comment 1",
             userId: userId,
             userLogin: "user1",
             createdAt: expect.any(String)
