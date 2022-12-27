@@ -76,7 +76,7 @@ export const authService = {
         });
         if (!deviceId) return null;
         const accessToken = await jwtService.createAccessJWT(userId);
-        const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, String(lastActiveDate.getTime()));
+        const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, lastActiveDate);
         return {accessToken, refreshToken};
     },
     async userLogout(refreshToken: string): Promise<boolean> {
