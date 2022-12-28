@@ -11,13 +11,22 @@ export const authSessionsRepository = {
         //     expiresDate: {$lt: new Date()}
         // });
     },
-    async saveDeviceAuthSession(session: AuthSessionEntity): Promise<string | null> {
-        await this.cleanAuthSessionsCollection();
+    async saveDeviceAuthSession(session: AuthSessionEntity) {
         //сохраняем сессию в базу и возвращаем true если операция была успешна
         console.log(`[deviceAuthSessionsRepository]:saveDeviceAuthSession`);
-        const result = await deviceAuthSessionsCollection.insertOne(session);
-        if (result.acknowledged) return result.insertedId.toString();
-        return null;
+        const sessionIsExist = this.getDeviceAuthSessionById(session.deviceId)
+        const {deviceId, ip, expiresDate, userId, lastActiveDate, title} =session
+        if (!sessionIsExist) {
+            return deviceAuthSessionsCollection.updateOne({_id:new ObjectId(deviceId)}, {$set:{lastActiveDate, expiresDate}});
+        }
+        return deviceAuthSessionsCollection.insertOne({
+            _id: new ObjectId(deviceId),
+            title,
+            lastActiveDate,
+            userId,
+            ip,
+            expiresDate
+        });
     },
     async getDeviceAuthSessionById(deviceId: string): Promise<AuthSessionInDb | null> {
         console.log(`[deviceAuthSessionsRepository]: getDeviceAuthSessionById:${deviceId}`);
