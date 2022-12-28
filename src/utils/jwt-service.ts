@@ -4,6 +4,7 @@ import {
     UserInfoInRefreshToken
 } from "../controllers/interfaces/user-info-in-refresh-token.interface";
 import {ACCESS_TOKEN_LIFE_PERIOD, REFRESH_TOKEN_LIFE_PERIOD} from '../settings-const';
+import add from 'date-fns/add';
 
 dotenv.config();
 
@@ -16,7 +17,7 @@ export type TypeJWT = 'access' | 'refresh'
 
 export const jwtService = {
     async createAccessJWT(userId: string) {
-        const expiresIn = ACCESS_TOKEN_LIFE_PERIOD.amount + ACCESS_TOKEN_LIFE_PERIOD.units[0]
+        const expiresIn = ACCESS_TOKEN_LIFE_PERIOD.amount + ACCESS_TOKEN_LIFE_PERIOD.units[0];
         console.log('[jwtService]expiresIn accessToken:' + expiresIn);
         return jwt.sign(
             {userId},
@@ -25,14 +26,19 @@ export const jwtService = {
         );
     },
 
-    async createRefreshJWT(userId: string, deviceId: string, lastActiveDate: Date, ) {
-        const expiresIn = REFRESH_TOKEN_LIFE_PERIOD.amount + REFRESH_TOKEN_LIFE_PERIOD.units[0]
+    async createRefreshJWT(userId: string, deviceId: string, ip: string) {
+        const expiresIn = REFRESH_TOKEN_LIFE_PERIOD.amount + REFRESH_TOKEN_LIFE_PERIOD.units[0];
         console.log('[jwtService]expiresIn refreshToken:' + expiresIn);
         return jwt.sign(
-            {userId, deviceId, lastActiveDate},
+            {userId, deviceId, ip},
             JWT_REFRESH_SECRET,
             {expiresIn}
         );
+    },
+
+    getLastActiveDateFromRefreshToken(refreshToken: string) {
+        const payload: any = jwt.decode(refreshToken);
+        return new Date(payload.iat * 1000);
     },
 
     async getUserIdByJwtToken(token: string, type: TypeJWT) {
@@ -47,19 +53,28 @@ export const jwtService = {
         }
     },
 
-    async getSessionInfoByJwtToken(token: string):Promise<UserInfoInRefreshToken | null> {
+    verifyJwtToken(token: string, type: TypeJWT): boolean {
         try {
             const result: any = jwt.verify(
                 token,
-                JWT_REFRESH_SECRET
+                type === 'access' ? JWT_ACCESS_SECRET : JWT_REFRESH_SECRET
             );
-            return ({
-                userId:result.userId,
-                deviceId:result.deviceId,
-                lastActiveDate:result.lastActiveDate});
+            return !!result;
         } catch (error) {
-            return null;
+            return false;
         }
+    },
+
+    getSessionInfoByJwtToken(token: string): UserInfoInRefreshToken {
+        const payload: any = jwt.decode(token);
+        return ({
+            userId: payload.userId,
+            deviceId: payload.deviceId,
+            ip: payload.ip,
+            lastActiveDate: String(payload.iat * 1000),
+            expiresDate: String(payload.exp * 1000),
+
+        });
     }
 
 };
