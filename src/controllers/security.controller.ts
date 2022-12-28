@@ -20,6 +20,7 @@ securityRouter.get('/devices',
             const result = await authService.getAllSessionByUserId(userInfo!.userId);
             return res.status(200).send(result);
         } catch (error) {
+            console.log(error);
             return res.sendStatus(500);
         }
     }

@@ -45,8 +45,8 @@ export const authSessionsRepository = {
         });
     },
     async getAllSessionByUserId(userId: string): Promise<AuthSessionInDb[]> {
-        console.log(`[deviceAuthSessionsRepository]: getAllSessionByUserId`);
-        await this.cleanAuthSessionsCollection();
+        console.log(`[deviceAuthSessionsRepository]: getAllSessionByUserId: ${userId}`);
+       // await this.cleanAuthSessionsCollection();
         const sessions = await deviceAuthSessionsCollection.find({
             userId
         }).toArray();
