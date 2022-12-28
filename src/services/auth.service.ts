@@ -76,36 +76,18 @@ export const authService = {
         });
         return {accessToken, refreshToken};
     },
-    // async createTokensPair(userId: string, ip: string, title: string): Promise<UserTokensPairInterface | null> {
-    //     console.log(`[authService]/createTokensPair  started`);
-    //     const expiresDate = add(new Date(), {[REFRESH_TOKEN_LIFE_PERIOD.units]: REFRESH_TOKEN_LIFE_PERIOD.amount});
-    //     console.log(`[authService]/userLogin  expiresDate = ${expiresDate}`);
-    //     const deviceId = uuidv4();
-    //     const accessToken = await jwtService.createAccessJWT(userId);
-    //     const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, ip);
-    //     const {lastActiveDate} = jwtService.getSessionInfoByJwtToken(refreshToken);
-    //     await authSessionsRepository.saveDeviceAuthSession({
-    //         _id: new ObjectId(deviceId),
-    //         ip,
-    //         title,
-    //         userId,
-    //         lastActiveDate,
-    //         expiresDate
-    //     });
-    //     return {accessToken, refreshToken};
-    // },
     async userLogout(refreshToken: string): Promise<boolean> {
         const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
         console.log(`[usersService]: userLogout`);
         if (!userInfo) return false;
         return authSessionsRepository.deleteSessionById(userInfo.deviceId);
     },
-    async checkDeviceSession(deviceId:string, userId:string, lastActiveDate:Date): Promise<{status:string, message:string}> {
+    async checkDeviceSession(deviceId:string, userId:string, lastActiveDate:string): Promise<{status:string, message:string}> {
         console.log(`[authService] checkDeviceSession run...`);
         const sessionInDb = await authSessionsRepository.getDeviceAuthSessionById(deviceId);
         if (!sessionInDb) return {status: 'error', message: 'sessionInDb not find'};
-        console.log(`[authService] checkDeviceSession: sessionInDb.lastActiveDate:${sessionInDb.lastActiveDate.getTime()}`);
-        console.log(`[authService] checkDeviceSession: sessionInTOKEN.lastActiveDate:${lastActiveDate.getTime()}`);
+        console.log(`[authService] checkDeviceSession: sessionInDb.lastActiveDate:${sessionInDb.lastActiveDate}`);
+        console.log(`[authService] checkDeviceSession: sessionInTOKEN.lastActiveDate:${lastActiveDate}`);
         console.log(`[authService] checkDeviceSession: RESULT:${lastActiveDate===sessionInDb.lastActiveDate}`);
 
         if (sessionInDb.lastActiveDate !== lastActiveDate) return {status: 'error', message: 'lastActiveDate is wrong'}
@@ -117,7 +99,7 @@ export const authService = {
         return sessions.map(s => ({
             ip: s.ip,
             title: s.title,
-            lastActiveDate: s.lastActiveDate.toISOString(),
+            lastActiveDate: s.lastActiveDate,
             deviceId: s.deviceId
         }));
     },
