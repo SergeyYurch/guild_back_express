@@ -1,7 +1,7 @@
 export interface AuthSessionInDb {
     ip: string;
     title: string;
-    lastActiveDate: Date;
+    lastActiveDate: string;
     deviceId: string;
     userId:string;
 }
