@@ -1,5 +1,7 @@
 export interface UserInfoInRefreshToken {
     userId: string;
     deviceId: string;
-    lastActiveDate: Date;
+    ip:string;
+    lastActiveDate: string;
+    expiresDate: string;
 }
