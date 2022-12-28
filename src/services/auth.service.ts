@@ -15,7 +15,7 @@ import {UserTokensPairInterface} from "./entities/user-tokens-pair.interface";
 import {authSessionsRepository} from "../repositories/auth-sessions.repository";
 import {DeviceSessionViewModelDto} from "../controllers/dto/deviceSessionViewModel.dto";
 import {AuthSessionInDb} from "../repositories/entitiesRepository/auth-session-in-db.interface";
-import {REFRESH_TOKEN_LIFE_PERIOD} from '../settings-const';
+import {ObjectId} from 'mongodb';
 
 export const authService = {
 
@@ -62,49 +62,55 @@ export const authService = {
     },
     async userLogin(userId: string, ip: string, title: string): Promise<UserTokensPairInterface | null> {
         console.log(`[authService]/userLogin  started`);
-        const previousSessionId = await authSessionsRepository.getPreviousUserSessionFromThisDevice(userId, title)
-        if(previousSessionId) await authSessionsRepository.deleteSessionById(previousSessionId)
-        const lastActiveDate = new Date();
-        const expiresDate = add(new Date(), {[REFRESH_TOKEN_LIFE_PERIOD.units]: REFRESH_TOKEN_LIFE_PERIOD.amount});
-        console.log(`[authService]/userLogin  expiresDate = ${expiresDate}`);
-        const deviceId = await authSessionsRepository.saveDeviceAuthSession({
+        const deviceId = new ObjectId().toString()
+        const accessToken = await jwtService.createAccessJWT(userId);
+        const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, ip);
+        const {lastActiveDate, expiresDate} = jwtService.getSessionInfoByJwtToken(refreshToken);
+        await authSessionsRepository.saveDeviceAuthSession({
+            deviceId,
             ip,
             title,
+            userId,
             lastActiveDate,
-            expiresDate,
-            userId
+            expiresDate
         });
-        if (!deviceId) return null;
-        const accessToken = await jwtService.createAccessJWT(userId);
-        const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, lastActiveDate);
         return {accessToken, refreshToken};
     },
+    // async createTokensPair(userId: string, ip: string, title: string): Promise<UserTokensPairInterface | null> {
+    //     console.log(`[authService]/createTokensPair  started`);
+    //     const expiresDate = add(new Date(), {[REFRESH_TOKEN_LIFE_PERIOD.units]: REFRESH_TOKEN_LIFE_PERIOD.amount});
+    //     console.log(`[authService]/userLogin  expiresDate = ${expiresDate}`);
+    //     const deviceId = uuidv4();
+    //     const accessToken = await jwtService.createAccessJWT(userId);
+    //     const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, ip);
+    //     const {lastActiveDate} = jwtService.getSessionInfoByJwtToken(refreshToken);
+    //     await authSessionsRepository.saveDeviceAuthSession({
+    //         _id: new ObjectId(deviceId),
+    //         ip,
+    //         title,
+    //         userId,
+    //         lastActiveDate,
+    //         expiresDate
+    //     });
+    //     return {accessToken, refreshToken};
+    // },
     async userLogout(refreshToken: string): Promise<boolean> {
         const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
         console.log(`[usersService]: userLogout`);
         if (!userInfo) return false;
         return authSessionsRepository.deleteSessionById(userInfo.deviceId);
     },
-    async checkDeviceSession(ip: string, title: string, refreshToken: string): Promise<{status:string, message:string}> {
-        const sessionInfoFromToken = await jwtService.getSessionInfoByJwtToken(refreshToken);
-        if (!sessionInfoFromToken) return {status: 'error', message: 'sessionInfoFromToken is wrong'};
-        console.log(`[checkDeviceSession]: InToken/deviceId:${sessionInfoFromToken.deviceId}`);
-        const sessionInDb = await authSessionsRepository.getDeviceAuthSessionById(sessionInfoFromToken.deviceId);
+    async checkDeviceSession(deviceId:string, userId:string, lastActiveDate:Date): Promise<{status:string, message:string}> {
+        console.log(`[authService] checkDeviceSession run...`);
+        const sessionInDb = await authSessionsRepository.getDeviceAuthSessionById(deviceId);
         if (!sessionInDb) return {status: 'error', message: 'sessionInDb not find'};
-        console.log(`[checkDeviceSession]: Input/ip:${ip}`);
-        console.log(`[checkDeviceSession]: InDb/ip:${sessionInDb?.ip}`);
-        console.log(`[checkDeviceSession]: Input/title:${title}`);
-        console.log(`[checkDeviceSession]: InDb/title:${sessionInDb.title}`);
-        console.log(`[checkDeviceSession]: InToken/lastActiveDate:${sessionInfoFromToken.lastActiveDate}`);
-        console.log(`[checkDeviceSession]: InDb/lastActiveDate:${sessionInDb.lastActiveDate}`);
-        console.log(`[checkDeviceSession]: InToken/userId:${sessionInfoFromToken.userId}`);
-        console.log(`[checkDeviceSession]: InDb/userId:${sessionInDb.userId}`);
-        const lastActiveDateFromToken =  new Date(sessionInfoFromToken.lastActiveDate)
-        if (sessionInDb.title !== title) return {status: 'error', message: `title is wrong,  in DB: (title:${sessionInDb.title}, lastActiveDate:${sessionInDb.lastActiveDate}), current session title: ${title}, lastActiveDate:${sessionInfoFromToken.userId}`}
-        if (sessionInDb.lastActiveDate > lastActiveDateFromToken) return {status: 'error', message: 'lastActiveDate is wrong'}
-        if (sessionInDb.userId !== sessionInfoFromToken.userId) return {status: 'error', message: 'userId is wrong'}
+        console.log(`[authService] checkDeviceSession: sessionInDb.lastActiveDate:${sessionInDb.lastActiveDate.getTime()}`);
+        console.log(`[authService] checkDeviceSession: sessionInTOKEN.lastActiveDate:${lastActiveDate.getTime()}`);
+        console.log(`[authService] checkDeviceSession: RESULT:${lastActiveDate===sessionInDb.lastActiveDate}`);
 
-        return  {status: 'ok', message: sessionInDb.userId};
+        if (sessionInDb.lastActiveDate !== lastActiveDate) return {status: 'error', message: 'lastActiveDate is wrong'}
+        if (sessionInDb.userId !== userId) return {status: 'error', message: 'userId is wrong'}
+        return  {status: 'ok', message: 'ok'};
     },
     async getAllSessionByUserId(userId: string): Promise<DeviceSessionViewModelDto[]> {
         const sessions = await authSessionsRepository.getAllSessionByUserId(userId);
