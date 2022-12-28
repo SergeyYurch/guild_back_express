@@ -99,7 +99,7 @@ export const authService = {
         return sessions.map(s => ({
             ip: s.ip,
             title: s.title,
-            lastActiveDate: s.lastActiveDate,
+            lastActiveDate: new Date(s.lastActiveDate).toISOString(),
             deviceId: s.deviceId
         }));
     },
