@@ -58,14 +58,15 @@ export const setRefreshTokenToCookie = (res: Response, refreshToken: string) => 
         refreshToken,
         {
             expires: getCookieRefreshTokenExpire(),
-            secure: true,
+            // secure: true,
             httpOnly: true
         }
     );
 };
 
 export const getDeviceInfo = (req: Request): { ip: string, title: string } => {
-    const ip = req.get('X-Forwarded-For')|| '00:00:00:00'
+    // const ip = req.get('X-Forwarded-For')|| '00:00:00:00'
+    const ip = req.ip
     const title = req.get('User-Agent')|| 'no name'
     return {ip, title};
 };
