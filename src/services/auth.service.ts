@@ -76,6 +76,21 @@ export const authService = {
         });
         return {accessToken, refreshToken};
     },
+    async userRefresh(userId: string, deviceId: string, ip:string, title:string): Promise<UserTokensPairInterface | null> {
+        console.log(`[authService]/userRefresh  started`);
+        const accessToken = await jwtService.createAccessJWT(userId);
+        const refreshToken = await jwtService.createRefreshJWT(userId, deviceId, ip);
+        const {lastActiveDate, expiresDate} = jwtService.getSessionInfoByJwtToken(refreshToken);
+        await authSessionsRepository.updateDeviceAuthSession({
+            deviceId,
+            ip,
+            title,
+            userId,
+            lastActiveDate,
+            expiresDate
+        });
+        return {accessToken, refreshToken};
+    },
     async userLogout(refreshToken: string): Promise<boolean> {
         const userInfo = await jwtService.getSessionInfoByJwtToken(refreshToken);
         console.log(`[usersService]: userLogout`);
