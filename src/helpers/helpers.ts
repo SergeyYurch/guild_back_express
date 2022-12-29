@@ -58,7 +58,7 @@ export const setRefreshTokenToCookie = (res: Response, refreshToken: string) => 
         refreshToken,
         {
             expires: getCookieRefreshTokenExpire(),
-            // secure: true,
+            secure: true,
             httpOnly: true
         }
     );
