@@ -5,7 +5,7 @@ import {AuthSessionInDb} from "./entitiesRepository/auth-session-in-db.interface
 
 
 export const authSessionsRepository = {
-    async cleanAuthSessionsCollection  ():Promise<void> {
+    async cleanAuthSessionsCollection(): Promise<void> {
         console.log(`[authSessionsRepository]/cleanAuthSessionsCollection `);
         // await deviceAuthSessionsCollection.deleteMany({
         //     expiresDate: {$lt: new Date()}
@@ -14,11 +14,8 @@ export const authSessionsRepository = {
     async saveDeviceAuthSession(session: AuthSessionEntity) {
         //сохраняем сессию в базу и возвращаем true если операция была успешна
         console.log(`[deviceAuthSessionsRepository]:saveDeviceAuthSession`);
-        const sessionIsExist = this.getDeviceAuthSessionById(session.deviceId)
-        const {deviceId, ip, expiresDate, userId, lastActiveDate, title} =session
-        if (!sessionIsExist) {
-            return deviceAuthSessionsCollection.updateOne({_id:new ObjectId(deviceId)}, {$set:{lastActiveDate, expiresDate}});
-        }
+        await this.cleanAuthSessionsCollection();
+        const {deviceId, ip, expiresDate, userId, lastActiveDate, title} = session;
         return deviceAuthSessionsCollection.insertOne({
             _id: new ObjectId(deviceId),
             title,
@@ -28,6 +25,19 @@ export const authSessionsRepository = {
             expiresDate
         });
     },
+    async updateDeviceAuthSession(session: AuthSessionEntity) {
+        //обновляем сессию в базе и возвращаем true если операция была успешна
+        console.log(`[deviceAuthSessionsRepository]:updateDeviceAuthSession: ${session.deviceId}`);
+        await this.cleanAuthSessionsCollection();
+        const {deviceId, expiresDate, lastActiveDate} = session;
+        return deviceAuthSessionsCollection.updateOne({_id: new ObjectId(deviceId)}, {
+            $set: {
+                lastActiveDate,
+                expiresDate
+            }
+        });
+    },
+
     async getDeviceAuthSessionById(deviceId: string): Promise<AuthSessionInDb | null> {
         console.log(`[deviceAuthSessionsRepository]: getDeviceAuthSessionById:${deviceId}`);
         await this.cleanAuthSessionsCollection();
@@ -46,7 +56,7 @@ export const authSessionsRepository = {
     },
     async getAllSessionByUserId(userId: string): Promise<AuthSessionInDb[]> {
         console.log(`[deviceAuthSessionsRepository]: getAllSessionByUserId: ${userId}`);
-       // await this.cleanAuthSessionsCollection();
+        // await this.cleanAuthSessionsCollection();
         const sessions = await deviceAuthSessionsCollection.find({
             userId
         }).toArray();
@@ -68,7 +78,7 @@ export const authSessionsRepository = {
         console.log(`[deviceAuthSessionsRepository]: deleteSessionExcludeById result: ${result.acknowledged}`);
         return result.acknowledged;
     },
-    async getPreviousUserSessionFromThisDevice(userId:string, title: string): Promise<string | null> {
+    async getPreviousUserSessionFromThisDevice(userId: string, title: string): Promise<string | null> {
         console.log(`[deviceAuthSessionsRepository]: checkPreviousUserSessionFromThisDevice`);
         await this.cleanAuthSessionsCollection();
         const result = await deviceAuthSessionsCollection.findOne({
