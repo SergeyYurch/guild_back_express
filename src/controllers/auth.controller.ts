@@ -132,7 +132,8 @@ authRouter.post('/refresh-token',
         try {
             const {ip, title} = getDeviceInfo(req);
             const userId = req.user?.id;
-            const tokensPair = await authService.userLogin(userId!, ip, title);
+            const deviceId = req.deviceId
+            const tokensPair = await authService.userRefresh(userId!, deviceId!, ip, title);
             if (!tokensPair) return res.sendStatus(500);
             setRefreshTokenToCookie(res, tokensPair.refreshToken);
             return res.status(200).send({
